@@ -12,6 +12,10 @@ enum Roaster {
     SimonCowell,
     NikkiGlaser,
     JoanRivers,
+    CaseOh,
+    GenX,
+    Millennial,
+    GenZ,
 }
 
 impl Roaster {
@@ -23,6 +27,25 @@ impl Roaster {
             Roaster::SimonCowell => "Simon Cowell",
             Roaster::NikkiGlaser => "Nikki Glaser",
             Roaster::JoanRivers => "Joan Rivers",
+            Roaster::CaseOh => "CaseOh",
+            Roaster::GenX => "Gen X Teen",
+            Roaster::Millennial => "Millennial Teen",
+            Roaster::GenZ => "Gen Z Teen",
+        }
+    }
+
+    fn description(&self) -> &'static str {
+        match self {
+            Roaster::Ramsay => "Brutal British chef burns 🔪",
+            Roaster::UncleRoger => "Haiyaa! Asian uncle cooking roasts 🍚",
+            Roaster::RickAstley => "Never gonna give you up... on the puns 🎵",
+            Roaster::SimonCowell => "Blunt, \"It's a no from me\" ❌",
+            Roaster::NikkiGlaser => "Sharp, modern comedy roast 💅",
+            Roaster::JoanRivers => "Legendary savage fashion burns 👗",
+            Roaster::CaseOh => "Chaotic YouTube energy & food trauma 🎮",
+            Roaster::GenX => "Whatever, this is lame anyway 🙄",
+            Roaster::Millennial => "Yas queen, but also anxious & broke 📱",
+            Roaster::GenZ => "No cap, this slaps fr fr 💀",
         }
     }
 }
@@ -32,6 +55,7 @@ enum Difficulty {
     Easy,
     Medium,
     Hard,
+    Insane,
 }
 
 impl Difficulty {
@@ -40,6 +64,7 @@ impl Difficulty {
             Difficulty::Easy => (1, 100),
             Difficulty::Medium => (1, 500),
             Difficulty::Hard => (1, 1000),
+            Difficulty::Insane => (1, 10000),
         }
     }
 
@@ -48,6 +73,16 @@ impl Difficulty {
             Difficulty::Easy => "Easy",
             Difficulty::Medium => "Medium",
             Difficulty::Hard => "Hard",
+            Difficulty::Insane => "Insane",
+        }
+    }
+
+    fn emoji(&self) -> &'static str {
+        match self {
+            Difficulty::Easy => "😊",
+            Difficulty::Medium => "😤",
+            Difficulty::Hard => "💀",
+            Difficulty::Insane => "👹",
         }
     }
 }
@@ -57,43 +92,134 @@ const BAD_WORDS: &[&str] = &[
 ];
 
 fn main() {
-    println!("🎉 Welcome to Guess the Number! 🎉");
-    println!("Persistent leaderboard • Multiple difficulties • Warmth hints • Custom roaster banter\n");
-
+    print_banner();
+    
     let roaster = ask_roaster();
-    println!("\nYou've chosen {} as your roaster. Get ready!\n", roaster.name());
+    print_roaster_intro(roaster);
 
     let profane = ask_profane();
     if profane {
-        println!("Profanity mode: ON – some roasters will get extra spicy. 🔞\n");
+        println!("🔞 Profanity mode: ON – Brace yourself for spicy roasts.\n");
     } else {
-        println!("Profanity mode: OFF – keeping it family-friendly. 😇\n");
+        println!("😇 Profanity mode: OFF – Keeping it family-friendly.\n");
     }
 
     let mut leaderboards = load_leaderboards();
+    let mut total_games = 0;
+    let mut total_attempts = 0;
 
     loop {
         let difficulty = ask_difficulty();
         let (attempts, guesses) = play_round(difficulty, roaster, profane);
 
-        println!("\n🏆 You nailed it in {} attempt{}!", attempts, if attempts == 1 { "" } else { "s" });
-        println!("Your guesses: {}", guesses.iter().map(|g| g.to_string()).collect::<Vec<_>>().join(", "));
+        total_games += 1;
+        total_attempts += attempts;
 
+        print_win_stats(attempts, &guesses);
         update_leaderboard(&mut leaderboards, difficulty, attempts);
         display_leaderboards(&leaderboards);
 
+        println!("\n📊 Session Stats: {} game{} played, {:.1} avg attempts",
+            total_games,
+            if total_games == 1 { "" } else { "s" },
+            total_attempts as f32 / total_games as f32
+        );
+
         if !ask_play_again() {
             save_leaderboards(&leaderboards);
-            println!("\nCheers for playing! Leaderboard saved.");
+            print_goodbye(roaster);
             break;
         }
-        println!();
+        println!("\n{}\n", "=".repeat(60));
     }
+}
+
+fn print_banner() {
+    println!("{}", "=".repeat(60));
+    println!("🎲  ULTRA GUESSING GAME v2.0 – Now with 420% more roasts  🎲");
+    println!("{}", "=".repeat(60));
+    println!("Features:");
+    println!("  ✨ 10 unique roasters with personality");
+    println!("  🏆 Persistent leaderboards across 4 difficulties");
+    println!("  🌡️  Warmth hints (getting warmer/colder)");
+    println!("  🔥 Optional profanity mode");
+    println!("  📊 Session statistics tracking\n");
+}
+
+fn print_roaster_intro(roaster: Roaster) {
+    println!("\n{}", "─".repeat(60));
+    match roaster {
+        Roaster::Ramsay => println!("🔪 Gordon Ramsay: \"Right, you donut. Let's see if you can count!\""),
+        Roaster::UncleRoger => println!("🍚 Uncle Roger: \"Haiyaa! You better not disappoint Uncle Roger!\""),
+        Roaster::RickAstley => println!("🎵 Rick Astley: \"Never gonna give you up on this game!\""),
+        Roaster::SimonCowell => println!("❌ Simon Cowell: \"Let's see if you're any good at this.\""),
+        Roaster::NikkiGlaser => println!("💅 Nikki Glaser: \"Oh honey, this should be interesting...\""),
+        Roaster::JoanRivers => println!("👗 Joan Rivers: \"Can we talk? Let's see those guessing skills!\""),
+        Roaster::CaseOh => println!("🎮 CaseOh: \"CHAT! CHAT! Watch me destroy this person at guessing!\""),
+        Roaster::GenX => println!("🙄 Gen X: \"Whatever, this is probably rigged anyway.\""),
+        Roaster::Millennial => println!("📱 Millennial: \"OMG this is giving early 2000s vibes! Let's do this!\""),
+        Roaster::GenZ => println!("💀 Gen Z: \"Bestie, this about to be a whole vibe, no cap.\""),
+    }
+    println!("{}\n", "─".repeat(60));
+}
+
+fn print_win_stats(attempts: u32, guesses: &[u32]) {
+    println!("\n{}", "🌟".repeat(30));
+    println!("🏆 VICTORY! You nailed it in {} attempt{}!", 
+        attempts, 
+        if attempts == 1 { "" } else { "s" }
+    );
+    
+    if attempts == 1 {
+        println!("💯 PERFECT! First try! Are you psychic?!");
+    } else if attempts <= 3 {
+        println!("🔥 INCREDIBLE! You're a natural!");
+    } else if attempts <= 5 {
+        println!("👏 Well done! Solid performance!");
+    } else if attempts <= 10 {
+        println!("👍 Not bad! Room for improvement!");
+    } else {
+        println!("😅 Finally! That was... a journey!");
+    }
+    
+    println!("Your guessing journey: {}", 
+        guesses.iter()
+            .map(|g| g.to_string())
+            .collect::<Vec<_>>()
+            .join(" → ")
+    );
+    println!("{}\n", "🌟".repeat(30));
+}
+
+fn print_goodbye(roaster: Roaster) {
+    println!("\n{}", "═".repeat(60));
+    match roaster {
+        Roaster::Ramsay => println!("🔪 Ramsay: \"Get out! ...But well done, honestly.\""),
+        Roaster::UncleRoger => println!("🍚 Uncle Roger: \"Okay lah, you did good. Uncle Roger approve!\""),
+        Roaster::RickAstley => println!("🎵 Rick: \"Never gonna say goodbye! ...Wait, actually, goodbye!\""),
+        Roaster::SimonCowell => println!("❌ Simon: \"You know what? That wasn't terrible. See you.\""),
+        Roaster::NikkiGlaser => println!("💅 Nikki: \"Thanks babe, that was fun! Don't be a stranger!\""),
+        Roaster::JoanRivers => println!("👗 Joan: \"Darling, you were fabulous! Mwah!\""),
+        Roaster::CaseOh => println!("🎮 CaseOh: \"GG CHAT! That was actually fire! Peace out!\""),
+        Roaster::GenX => println!("🙄 Gen X: \"Cool, whatever. Later.\""),
+        Roaster::Millennial => println!("📱 Millennial: \"This was honestly iconic! Ttyl bestie!\""),
+        Roaster::GenZ => println!("💀 Gen Z: \"No cap you ate that up! Purr! Bye bestie!\""),
+    }
+    println!("💾 Leaderboard saved. Thanks for playing ULTRA GUESSING GAME!");
+    println!("{}\n", "═".repeat(60));
 }
 
 fn play_round(difficulty: Difficulty, roaster: Roaster, profane: bool) -> (u32, Vec<u32>) {
     let (lower, upper) = difficulty.range();
     let secret_number = rand::thread_rng().gen_range(lower..=upper);
+
+    println!("\n{} {} Mode: Guess between {} and {}", 
+        difficulty.emoji(), 
+        difficulty.name(), 
+        lower, 
+        upper
+    );
+    println!("💡 Hint: I've picked a number. Time to prove yourself!\n");
 
     let mut attempts = 0u32;
     let mut guesses = Vec::new();
@@ -139,7 +265,6 @@ fn play_round(difficulty: Difficulty, roaster: Roaster, profane: bool) -> (u32, 
             ].into_iter().map(String::from).collect(),
             "🎯 Bang on! Finally, you got it right – about bloody time!",
         ),
-        // [Other roasters unchanged – converted to Vec<String> in the same way]
         Roaster::UncleRoger => (
             vec![
                 "Haiyaa! Too low lah! So weak!",
@@ -155,6 +280,8 @@ fn play_round(difficulty: Difficulty, roaster: Roaster, profane: bool) -> (u32, 
                 "Aiyah! Guess low like no confidence!",
                 "Too low! You make my ancestors cry!",
                 "Haiyaa! Higher please, don't torture Uncle!",
+                "So low... like putting colander on rice cooker!",
+                "Aiyo! You guess like Jamie Oliver cook rice!",
             ].into_iter().map(String::from).collect(),
             vec![
                 "Fuiyoh! Too high lah! Overcook already!",
@@ -170,8 +297,9 @@ fn play_round(difficulty: Difficulty, roaster: Roaster, profane: bool) -> (u32, 
                 "Aiyah! Too much – Uncle Roger cannot take!",
                 "Way too high! You add chili until die!",
                 "Haiyaa! Lower please, save the rice!",
+                "Too high! Like putting ketchup in fried rice!",
             ].into_iter().map(String::from).collect(),
-            "🎯 Fuiyoh! Correct lah! Uncle Roger proud of you!",
+            "🎯 Fuiyoh! Correct lah! Uncle Roger proud of you! MSG approved!",
         ),
         Roaster::RickAstley => (
             vec![
@@ -214,6 +342,7 @@ fn play_round(difficulty: Difficulty, roaster: Roaster, profane: bool) -> (u32, 
                 "No. Just no. Try higher.",
                 "If I'm being honest, that's not it.",
                 "Too low – you've got no chance with that.",
+                "I'm sorry, but that's a disaster.",
             ].into_iter().map(String::from).collect(),
             vec![
                 "Too high. Over the top.",
@@ -226,8 +355,9 @@ fn play_round(difficulty: Difficulty, roaster: Roaster, profane: bool) -> (u32, 
                 "Too high – one of the worst I've heard.",
                 "No from me. Guess lower.",
                 "That guess was completely off.",
+                "Ghastly. Simply ghastly.",
             ].into_iter().map(String::from).collect(),
-            "🎯 Well done. That was actually very good.",
+            "🎯 Well done. That was actually very good. I'm impressed.",
         ),
         Roaster::NikkiGlaser => (
             vec![
@@ -242,6 +372,8 @@ fn play_round(difficulty: Difficulty, roaster: Roaster, profane: bool) -> (u32, 
                 "That's so low it's pathetic.",
                 "Too low! What the fuck?",
                 "Lower than my expectations – higher please.",
+                "Babe, no. Higher.",
+                "That's giving desperate energy – aim up.",
             ].into_iter().map(String::from).collect(),
             vec![
                 "Too high – greedy much?",
@@ -254,8 +386,9 @@ fn play_round(difficulty: Difficulty, roaster: Roaster, profane: bool) -> (u32, 
                 "Too high – you're trying too hard.",
                 "Lower! Jesus Christ.",
                 "Too big – dial it back.",
+                "Honey, that's too much.",
             ].into_iter().map(String::from).collect(),
-            "🎯 Yes! Finally – you got there.",
+            "🎯 Yes! Finally – you got there. Proud of you, babe!",
         ),
         Roaster::JoanRivers => (
             vec![
@@ -270,6 +403,7 @@ fn play_round(difficulty: Difficulty, roaster: Roaster, profane: bool) -> (u32, 
                 "Too low! You look ridiculous.",
                 "Can we talk? Too fucking low.",
                 "That guess is ugly – higher please.",
+                "Darling, no. That's awful.",
             ].into_iter().map(String::from).collect(),
             vec![
                 "Too high! That's overdone, darling.",
@@ -282,12 +416,158 @@ fn play_round(difficulty: Difficulty, roaster: Roaster, profane: bool) -> (u32, 
                 "Too high – who dressed you?",
                 "That guess is a mess – lower.",
                 "Too big! Disaster.",
+                "Honey, that's a crime against numbers.",
             ].into_iter().map(String::from).collect(),
-            "🎯 Oh honey, you got it! Fabulous!",
+            "🎯 Oh honey, you got it! Fabulous! Simply divine!",
+        ),
+        Roaster::CaseOh => (
+            vec![
+                "CHAT! Too low! This person is TROLLING!",
+                "Bro, that's so low! CHAT is laughing at you!",
+                "Too small! You're getting timed out for that guess!",
+                "CHAT CHAT CHAT! Too low! This is embarrassing!",
+                "Nah bro, higher! You're making me look bad!",
+                "Too low! That's it, I'm eating another burger out of stress!",
+                "WHAT?! Too low! CHAT, spam L's!",
+                "Bro, that's lower than my K/D ratio! Higher!",
+                "Too small! I'm literally malding right now!",
+                "CHAT! This person needs help! Too low!",
+                "Nah nah nah, too low! You're cooked!",
+                "Higher bro! CHAT is NOT impressed!",
+                "Too low! This is giving bot behavior!",
+                "Bro really guessed that low! L + ratio + higher!",
+                "CHAT! Too fucking low! This is content!",
+            ].into_iter().map(String::from).collect(),
+            vec![
+                "TOO HIGH! CHAT, they're trolling!",
+                "Bro went way too high! Lower!",
+                "CHAT CHAT! Too big! This is crazy!",
+                "Nah bro, reel it in! Way too high!",
+                "Too high! I'm stress eating Takis over this!",
+                "WHAT?! Lower! CHAT, clip that!",
+                "Too big! You're as wrong as my diet!",
+                "Bro, lower! This is painful to watch!",
+                "CHAT! Too high! Someone help this person!",
+                "Way too high! You're griefing me right now!",
+                "Lower bro! This is NOT it!",
+                "Too high! CHAT is cringing!",
+                "Bro really overshot! That's an L! Lower!",
+                "Too fucking high! I'm dying! CHAT, help!",
+            ].into_iter().map(String::from).collect(),
+            "🎯 YOOOOO! CHAT! THEY GOT IT! GG! That was actually fire!",
+        ),
+        Roaster::GenX => (
+            vec![
+                "Too low. Whatever.",
+                "Like, too small. Not that I care.",
+                "Too low. This is lame anyway.",
+                "That guess sucks. Go higher.",
+                "Too low. As if.",
+                "Ugh, too small. Try harder, I guess.",
+                "Too low. Talk to the hand.",
+                "That's low. Whatever, guess higher.",
+                "Too small. This is so bogus.",
+                "Too low. Gag me with a spoon.",
+                "Higher. Not that it matters.",
+                "Too low. Psych! Go up.",
+                "That's weak sauce. Higher.",
+                "Too low. Don't have a cow, just guess higher.",
+            ].into_iter().map(String::from).collect(),
+            vec![
+                "Too high. Whatever.",
+                "Way too big. Lower, I guess.",
+                "Too high. This is so lame.",
+                "That's high. Lower. Not that I care.",
+                "Too big. As if I care. Lower.",
+                "Ugh, too high. Try lower.",
+                "Too high. Whatevs.",
+                "That's too much. Lower.",
+                "Way too high. Bogus guess.",
+                "Too high. Lower or whatever.",
+                "Too big. This is dumb anyway.",
+                "Lower. Not like it matters.",
+            ].into_iter().map(String::from).collect(),
+            "🎯 Cool, you got it. Whatever. I guess that's good or something.",
+        ),
+        Roaster::Millennial => (
+            vec![
+                "Too low bestie! That's not giving what it needs to give!",
+                "OMG too small! Guess higher, I'm literally dying!",
+                "Too low! This is NOT the vibe! Higher please!",
+                "Bestie... too low. I can't even. Go higher!",
+                "Too small! That's so cringe! Higher!",
+                "Oof, too low! That hit different (badly). Higher!",
+                "Too low! Periodt! Guess higher!",
+                "No cap that's too low! Higher bestie!",
+                "Too small! That's giving broke millennial energy! Up!",
+                "Too low! I'm having an existential crisis! Higher!",
+                "Bestie that's too low! Slay somewhere higher!",
+                "Too small! My anxiety can't take this! Higher!",
+                "Too low! That's not it, sis! Aim up!",
+                "OMG too low! I'm too emotionally invested! Higher!",
+                "Too fucking low! Higher or I'm cancelling you!",
+            ].into_iter().map(String::from).collect(),
+            vec![
+                "Too high bestie! Lower! I'm literally shaking!",
+                "Way too big! That's giving try-hard energy! Lower!",
+                "Too high! Sis, no! Bring it down!",
+                "Bestie... too high. I can't. Lower please!",
+                "Too big! That's so extra! Lower!",
+                "Oof, too high! That's not the tea! Lower!",
+                "Too high! This ain't it, chief! Down!",
+                "Way too big bestie! Lower or I'm unfollowing!",
+                "Too high! My therapist will hear about this! Lower!",
+                "Bestie that's too high! Reel it in!",
+                "Too big! I'm having a moment! Lower!",
+                "Too high! That's not the vibe! Down!",
+                "Way too big sis! I'm too anxious for this! Lower!",
+                "Too fucking high! I'm literally crying! Lower!",
+            ].into_iter().map(String::from).collect(),
+            "🎯 YASSS QUEEN! You did that! I'm so proud! That's so slay! 💅",
+        ),
+        Roaster::GenZ => (
+            vec![
+                "Too low bestie! That's giving L energy fr! Higher!",
+                "Nah that's too small! No cap, aim up!",
+                "Too low! Bestie you're cooked! Higher fr fr!",
+                "Bro that's mid and too low! Up!",
+                "Too small! That's not bussin! Higher!",
+                "Low key too low! High key need higher!",
+                "Too low! Deadass guess higher!",
+                "That ain't it bestie! Too low! Up!",
+                "Too small! This ain't giving! Higher fr!",
+                "Nah bro, too low! Periodt! Guess up!",
+                "Too low! Bro fell off! Higher!",
+                "That's cap! Too low! Go higher bestie!",
+                "Too small! You're tweaking! Up!",
+                "Low key too low fr fr! Higher!",
+                "Too fucking low! You're cooked! Higher!",
+                "Nah that's too low! Ratio + L + higher!",
+                "Too small bestie! This ain't giving main character! Up!",
+            ].into_iter().map(String::from).collect(),
+            vec![
+                "Too high bestie! That's doing too much! Lower!",
+                "Nah that's too big! No cap, down!",
+                "Too high! Bro you're cooked! Lower fr!",
+                "That's too much! Not bussin! Lower!",
+                "Way too high! That's sus! Down!",
+                "High key too high! Low key need lower!",
+                "Too high! Deadass lower bestie!",
+                "That ain't it! Too high! Down fr!",
+                "Too big! This ain't the vibe! Lower!",
+                "Nah bro, too high! Periodt! Lower!",
+                "Too high! You fell off! Down!",
+                "That's cap! Too high! Lower bestie!",
+                "Too big! You're tweaking! Down fr!",
+                "High key too high! Lower!",
+                "Too fucking high! You're cooked! Lower!",
+                "Nah that's too high! L + ratio + lower!",
+            ].into_iter().map(String::from).collect(),
+            "🎯 YOOO YOU ATE THAT UP! No cap that was bussin! Purr bestie! 💅💀",
         ),
     };
 
-    // Profanity filter – now works cleanly on Vec<String>
+    // Profanity filter
     if !profane {
         low_jibes = low_jibes
             .into_iter()
@@ -298,7 +578,6 @@ fn play_round(difficulty: Difficulty, roaster: Roaster, profane: bool) -> (u32, 
             .filter(|j| !BAD_WORDS.iter().any(|&w| j.to_lowercase().contains(w)))
             .collect();
 
-        // Defensive fallback – extremely unlikely to trigger with current data
         if low_jibes.is_empty() {
             low_jibes.push(String::from("Too low!"));
         }
@@ -308,7 +587,7 @@ fn play_round(difficulty: Difficulty, roaster: Roaster, profane: bool) -> (u32, 
     }
 
     loop {
-        print!("Enter your guess ({}-{}): ", lower, upper);
+        print!("💭 Your guess ({}-{}): ", lower, upper);
         io::stdout().flush().expect("Failed to flush stdout");
 
         let mut input = String::new();
@@ -319,13 +598,13 @@ fn play_round(difficulty: Difficulty, roaster: Roaster, profane: bool) -> (u32, 
         let guess: u32 = match input.trim().parse() {
             Ok(num) => num,
             Err(_) => {
-                println!("👎 That's not even a proper number. Try again.");
+                println!("❌ That's not even a proper number. Try again.");
                 continue;
             }
         };
 
         if guess < lower || guess > upper {
-            println!("👎 Out of range – stick to {}-{}!", lower, upper);
+            println!("⚠️  Out of range – stick to {}-{}!", lower, upper);
             continue;
         }
 
@@ -334,12 +613,8 @@ fn play_round(difficulty: Difficulty, roaster: Roaster, profane: bool) -> (u32, 
 
         let current_diff = guess.abs_diff(secret_number);
 
-        println!("Guess {}: {}", attempts, guess);
-        println!(
-            "Guesses so far: {}",
-            guesses.iter().map(|g| g.to_string()).collect::<Vec<_>>().join(", ")
-        );
-
+        println!("\n📍 Attempt #{}: You guessed {}", attempts, guess);
+        
         match guess.cmp(&secret_number) {
             Ordering::Less => {
                 let jibe = low_jibes[rand::thread_rng().gen_range(0..low_jibes.len())].as_str();
@@ -350,35 +625,57 @@ fn play_round(difficulty: Difficulty, roaster: Roaster, profane: bool) -> (u32, 
                 println!("🔥 {jibe}");
             }
             Ordering::Equal => {
-                println!("{}", win_message);
+                println!("\n{}", win_message);
                 return (attempts, guesses);
             }
         }
 
+        // Warmth system
         if let Some(prev_diff) = previous_diff {
             if current_diff < prev_diff {
-                println!("🌡️  You're getting warmer!");
+                println!("🌡️  Getting WARMER! 🔥");
             } else if current_diff > prev_diff {
-                println!("❄️  You're getting colder!");
+                println!("❄️  Getting COLDER! 🧊");
             } else {
-                println!("😐 Same distance – treading water?");
+                println!("😐 Same distance – you're circling it!");
+            }
+        }
+
+        // Extra hint for Insane mode
+        if difficulty == Difficulty::Insane && attempts >= 5 {
+            if current_diff <= 100 {
+                println!("🎯 SUPER HOT! You're within 100!");
+            } else if current_diff <= 500 {
+                println!("🔥 Getting warm! Within 500!");
             }
         }
 
         previous_diff = Some(current_diff);
+        
+        println!("📜 History: {}\n", 
+            guesses.iter()
+                .map(|g| g.to_string())
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
     }
 }
 
 fn ask_roaster() -> Roaster {
     loop {
-        println!("Choose your roaster (they'll mock your bad guesses):");
-        println!("1. Gordon Ramsay – Brutal British chef burns");
-        println!("2. Uncle Roger – Haiyaa! Asian uncle cooking roasts");
-        println!("3. Rick Astley – Never gonna give you up... on the puns");
-        println!("4. Simon Cowell – Blunt, \"It's a no from me\"");
-        println!("5. Nikki Glaser – Sharp, modern comedy roast");
-        println!("6. Joan Rivers – Legendary savage fashion burns");
-        print!("Your choice (1-6): ");
+        println!("\n🎭 Choose your roaster (they'll roast your guesses):\n");
+        println!("  1. {:<20} – {}", Roaster::Ramsay.name(), Roaster::Ramsay.description());
+        println!("  2. {:<20} – {}", Roaster::UncleRoger.name(), Roaster::UncleRoger.description());
+        println!("  3. {:<20} – {}", Roaster::RickAstley.name(), Roaster::RickAstley.description());
+        println!("  4. {:<20} – {}", Roaster::SimonCowell.name(), Roaster::SimonCowell.description());
+        println!("  5. {:<20} – {}", Roaster::NikkiGlaser.name(), Roaster::NikkiGlaser.description());
+        println!("  6. {:<20} – {}", Roaster::JoanRivers.name(), Roaster::JoanRivers.description());
+        println!("  7. {:<20} – {}", Roaster::CaseOh.name(), Roaster::CaseOh.description());
+        println!("  8. {:<20} – {}", Roaster::GenX.name(), Roaster::GenX.description());
+        println!("  9. {:<20} – {}", Roaster::Millennial.name(), Roaster::Millennial.description());
+        println!(" 10. {:<20} – {}", Roaster::GenZ.name(), Roaster::GenZ.description());
+        
+        print!("\n🎯 Your choice (1-10): ");
         io::stdout().flush().expect("Failed to flush stdout");
 
         let mut input = String::new();
@@ -391,17 +688,18 @@ fn ask_roaster() -> Roaster {
             "4" => return Roaster::SimonCowell,
             "5" => return Roaster::NikkiGlaser,
             "6" => return Roaster::JoanRivers,
-            _ => println!("👎 Please enter 1-6.\n"),
+            "7" => return Roaster::CaseOh,
+            "8" => return Roaster::GenX,
+            "9" => return Roaster::Millennial,
+            "10" => return Roaster::GenZ,
+            _ => println!("❌ Please enter a number between 1-10.\n"),
         }
     }
 }
 
-// [The rest of the functions (ask_profane, ask_difficulty, load/save_leaderboards,
-// update_leaderboard, display_leaderboards, ask_play_again) remain unchanged from the previous version]
-
 fn ask_profane() -> bool {
     loop {
-        print!("Enable profanity in roasts? (y/n): ");
+        print!("🔞 Enable profanity in roasts? (y/n): ");
         io::stdout().flush().expect("Failed to flush stdout");
 
         let mut input = String::new();
@@ -410,18 +708,20 @@ fn ask_profane() -> bool {
         match input.trim().to_lowercase().as_str() {
             "y" | "yes" => return true,
             "n" | "no" => return false,
-            _ => println!("👎 Just y or n, please!"),
+            _ => println!("❌ Just y or n, please!"),
         }
     }
 }
 
 fn ask_difficulty() -> Difficulty {
     loop {
-        println!("Choose your difficulty:");
-        println!("1. Easy   (1–100)");
-        println!("2. Medium (1–500)");
-        println!("3. Hard   (1–1000)");
-        print!("Your choice (1-3): ");
+        println!("\n🎮 Choose your difficulty:\n");
+        println!("  1. {} Easy   (1–100)   – Perfect for beginners", Difficulty::Easy.emoji());
+        println!("  2. {} Medium (1–500)   – A fair challenge", Difficulty::Medium.emoji());
+        println!("  3. {} Hard   (1–1000)  – For the brave", Difficulty::Hard.emoji());
+        println!("  4. {} Insane (1–10000) – Are you psychic?", Difficulty::Insane.emoji());
+        
+        print!("\n🎯 Your choice (1-4): ");
         io::stdout().flush().expect("Failed to flush stdout");
 
         let mut input = String::new();
@@ -431,15 +731,15 @@ fn ask_difficulty() -> Difficulty {
             "1" => return Difficulty::Easy,
             "2" => return Difficulty::Medium,
             "3" => return Difficulty::Hard,
-            _ => println!("👎 Please enter 1, 2, or 3.\n"),
+            "4" => return Difficulty::Insane,
+            _ => println!("❌ Please enter 1, 2, 3, or 4.\n"),
         }
     }
 }
 
 fn load_leaderboards() -> HashMap<Difficulty, Vec<(String, u32)>> {
-    // [unchanged]
     let mut map: HashMap<Difficulty, Vec<(String, u32)>> = HashMap::new();
-    for diff in [Difficulty::Easy, Difficulty::Medium, Difficulty::Hard] {
+    for diff in [Difficulty::Easy, Difficulty::Medium, Difficulty::Hard, Difficulty::Insane] {
         map.insert(diff, Vec::new());
     }
 
@@ -453,6 +753,7 @@ fn load_leaderboards() -> HashMap<Difficulty, Vec<(String, u32)>> {
                     "Easy" => Difficulty::Easy,
                     "Medium" => Difficulty::Medium,
                     "Hard" => Difficulty::Hard,
+                    "Insane" => Difficulty::Insane,
                     _ => continue,
                 };
                 let name = parts[1].to_string();
@@ -465,14 +766,13 @@ fn load_leaderboards() -> HashMap<Difficulty, Vec<(String, u32)>> {
 
     for vec in map.values_mut() {
         vec.sort_by_key(|e| e.1);
-        vec.truncate(3);
+        vec.truncate(5); // Top 5 instead of top 3
     }
 
     map
 }
 
 fn save_leaderboards(leaderboards: &HashMap<Difficulty, Vec<(String, u32)>>) {
-    // [unchanged]
     let mut content = String::new();
     for (&diff, board) in leaderboards {
         let diff_name = diff.name();
@@ -488,47 +788,66 @@ fn update_leaderboard(
     difficulty: Difficulty,
     attempts: u32,
 ) {
-    // [unchanged]
     let board = leaderboards.entry(difficulty).or_insert_with(Vec::new);
+    let max_entries = 5; // Top 5 instead of top 3
 
-    let threshold = if board.len() < 3 {
+    let threshold = if board.len() < max_entries {
         u32::MAX
     } else {
         board.last().unwrap().1
     };
 
-    if board.len() < 3 || attempts <= threshold {
-        print!("\n🌟 New top-3 score on {}! Enter your name: ", difficulty.name());
+    if board.len() < max_entries || attempts <= threshold {
+        print!("\n🌟 NEW TOP-5 SCORE on {}! Enter your name: ", difficulty.name());
         io::stdout().flush().expect("Failed to flush stdout");
 
         let mut name = String::new();
         io::stdin().read_line(&mut name).expect("Failed to read name");
         let name = name.trim();
-        let name = if name.is_empty() { "Anonymous".to_string() } else { name.to_string() };
+        let name = if name.is_empty() { 
+            "Anonymous".to_string() 
+        } else { 
+            name.chars().take(20).collect() // Limit name length
+        };
 
-        board.push((name, attempts));
+        board.push((name.clone(), attempts));
         board.sort_by_key(|e| e.1);
-        board.truncate(3);
+        board.truncate(max_entries);
 
         save_leaderboards(leaderboards);
+        
+        println!("✅ {} has been added to the {} leaderboard!", name, difficulty.name());
     } else {
-        println!("\nSolid effort, but not quite top-3 material on {} this time.", difficulty.name());
+        println!("\n👍 Solid effort! You needed {} attempts to beat the top-5 on {}.", 
+            threshold, 
+            difficulty.name()
+        );
     }
 }
 
 fn display_leaderboards(leaderboards: &HashMap<Difficulty, Vec<(String, u32)>>) {
-    // [unchanged]
-    println!("\n🏅 --- Leaderboards (Top 3 Lowest Attempts) ---");
-    for &diff in &[Difficulty::Easy, Difficulty::Medium, Difficulty::Hard] {
+    println!("\n{}", "═".repeat(60));
+    println!("🏅 LEADERBOARDS – Top 5 Lowest Attempts Per Difficulty 🏅");
+    println!("{}", "═".repeat(60));
+    
+    for &diff in &[Difficulty::Easy, Difficulty::Medium, Difficulty::Hard, Difficulty::Insane] {
         let (_, upper) = diff.range();
-        println!("\n{} (1–{}):", diff.name(), upper);
+        println!("\n{} {} (1–{}):", diff.emoji(), diff.name(), upper);
         let board = leaderboards.get(&diff).unwrap();
+        
         if board.is_empty() {
-            println!("   No entries yet – be the first!");
+            println!("   💤 No entries yet – be the first legend!");
         } else {
             for (rank, (name, attempts)) in board.iter().enumerate() {
+                let medal = match rank {
+                    0 => "🥇",
+                    1 => "🥈",
+                    2 => "🥉",
+                    _ => "  ",
+                };
                 println!(
-                    "   {}. {} – {} attempt{}",
+                    "   {} {}. {:<20} – {} attempt{}",
+                    medal,
                     rank + 1,
                     name,
                     attempts,
@@ -537,13 +856,12 @@ fn display_leaderboards(leaderboards: &HashMap<Difficulty, Vec<(String, u32)>>) 
             }
         }
     }
-    println!("--------------------------------------------------\n");
+    println!("\n{}", "═".repeat(60));
 }
 
 fn ask_play_again() -> bool {
-    // [unchanged]
     loop {
-        print!("Play another round? (y/n): ");
+        print!("\n🔄 Play another round? (y/n): ");
         io::stdout().flush().expect("Failed to flush stdout");
 
         let mut input = String::new();
@@ -552,7 +870,7 @@ fn ask_play_again() -> bool {
         match input.trim().to_lowercase().as_str() {
             "y" | "yes" => return true,
             "n" | "no" => return false,
-            _ => println!("👎 Just y or n, please!"),
+            _ => println!("❌ Just y or n, please!"),
         }
     }
 }
