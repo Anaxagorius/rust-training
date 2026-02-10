@@ -1,0 +1,11 @@
+[package]
+name = "guess_game_gui"
+version = "0.1.0"
+edition = "2021"  # Current stable edition
+authors = ["Your Name <you@example.com>"]  # Optional but nice to add
+description = "A guessing game with roast banter and egui GUI"
+license = "MIT OR Apache-2.0"  # Common for open-source
+
+[dependencies]
+eframe = { version = "0.28.1", default-features = true }  # Explicit default-features for clarity
+rand = "0.8.5"

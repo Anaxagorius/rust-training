@@ -1,0 +1,1 @@
+C:\Users\W0516036\desktop\rust\get-dependencies\projects\hello_world\hello_cargo\target\debug\hello_cargo.exe: C:\Users\W0516036\desktop\rust\get-dependencies\projects\hello_world\hello_cargo\src\main.rs

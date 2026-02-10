@@ -1,0 +1,10 @@
+C:\Users\W0516036\desktop\rust\get-dependencies\projects\guess_game_gui\target\debug\deps\arboard-6031e05b49bc704a.d: C:\Users\W0516036\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\arboard-3.6.1\src\lib.rs C:\Users\W0516036\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\arboard-3.6.1\src\common.rs C:\Users\W0516036\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\arboard-3.6.1\src\platform\mod.rs C:\Users\W0516036\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\arboard-3.6.1\src\platform\windows.rs
+
+C:\Users\W0516036\desktop\rust\get-dependencies\projects\guess_game_gui\target\debug\deps\libarboard-6031e05b49bc704a.rlib: C:\Users\W0516036\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\arboard-3.6.1\src\lib.rs C:\Users\W0516036\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\arboard-3.6.1\src\common.rs C:\Users\W0516036\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\arboard-3.6.1\src\platform\mod.rs C:\Users\W0516036\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\arboard-3.6.1\src\platform\windows.rs
+
+C:\Users\W0516036\desktop\rust\get-dependencies\projects\guess_game_gui\target\debug\deps\libarboard-6031e05b49bc704a.rmeta: C:\Users\W0516036\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\arboard-3.6.1\src\lib.rs C:\Users\W0516036\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\arboard-3.6.1\src\common.rs C:\Users\W0516036\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\arboard-3.6.1\src\platform\mod.rs C:\Users\W0516036\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\arboard-3.6.1\src\platform\windows.rs
+
+C:\Users\W0516036\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\arboard-3.6.1\src\lib.rs:
+C:\Users\W0516036\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\arboard-3.6.1\src\common.rs:
+C:\Users\W0516036\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\arboard-3.6.1\src\platform\mod.rs:
+C:\Users\W0516036\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\arboard-3.6.1\src\platform\windows.rs:
