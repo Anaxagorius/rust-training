@@ -194,6 +194,9 @@ pub fn help_text() -> &'static str {
   quests / q               — Show your quest log
   rest                     — Rest at a safe location
   use <item>               — Use a consumable item
+  shop [npc_id]            — Browse a merchant's wares
+  buy <item_id>            — Buy an item from a merchant
+  sell <item_id>           — Sell an item to a merchant
   craft list               — List known crafting recipes (with station & skill info)
   craft <recipe_id>        — Craft an item (must be at the required station)
   learn <recipe_id>        — Learn a new crafting recipe
