@@ -91,6 +91,8 @@ pub struct Location {
     pub is_safe: bool,
     pub is_visited: bool,
     pub has_crafting_station: Option<String>,
+    /// Whether this location has already been searched for loot.
+    pub is_looted: bool,
 }
 
 impl Location {
@@ -108,6 +110,7 @@ impl Location {
             is_safe,
             is_visited: false,
             has_crafting_station: None,
+            is_looted: false,
         }
     }
 
@@ -128,6 +131,11 @@ impl Location {
 
     pub fn with_crafting_station(mut self, station: &str) -> Self {
         self.has_crafting_station = Some(station.to_string());
+        self
+    }
+
+    pub fn with_loot_table(mut self, table_id: &str) -> Self {
+        self.loot_table_id = Some(table_id.to_string());
         self
     }
 
@@ -370,12 +378,14 @@ pub fn build_starting_world() -> WorldMap {
             "wolf_den_entrance",
             "Wolf Den Entrance",
             "The cave reeks of animal musk. Bones litter the threshold. \
-             Low growls echo from within.",
+             Low growls echo from within. Chewed remains of past victims \
+             are strewn across the floor — evidence of many meals.",
             RegionType::Cave,
         )
         .with_exit(Exit::new("south", "ashwood_depths", "Back into the forest."))
         .with_exit(Exit::new("north", "wolf_den_lair", "Into the den proper."))
-        .with_enemy_spawn("dire_wolf"),
+        .with_enemy_spawn("dire_wolf")
+        .with_loot_table("wolf_den_entrance"),
     );
 
     map.add_location(
@@ -384,11 +394,13 @@ pub fn build_starting_world() -> WorldMap {
             "Wolf Den Lair",
             "The main chamber of the wolf den. A massive dire wolf, scarred \
              from countless battles, guards its pups. Trophies of past \
-             adventurers litter the cave floor.",
+             adventurers litter the cave floor — packs, weapons, even a \
+             polished hunting horn. The alpha circles you, hackles raised.",
             RegionType::Cave,
         )
         .with_exit(Exit::new("south", "wolf_den_entrance", "Back to the den entrance."))
-        .with_enemy_spawn("dire_wolf_alpha"),
+        .with_enemy_spawn("dire_wolf_alpha")
+        .with_loot_table("wolf_den_lair"),
     );
 
     // --- Bog ---
@@ -445,13 +457,16 @@ pub fn build_starting_world() -> WorldMap {
             "Ironmere Keep Courtyard",
             "The courtyard is littered with goblin camp-fires and makeshift \
              shelters. A ramshackle forge has been set up in one corner. \
-             The keep tower looms to the north, its door banded with iron.",
+             Stolen goods from raided caravans are stashed under crude canvas \
+             shelters. The keep tower looms to the north, its door banded with \
+             iron.",
             RegionType::Ruins,
         )
         .with_exit(Exit::new("south", "ironmere_approach", "Back to the approach road."))
         .with_exit(Exit::new("north", "ironmere_tower", "To the iron-banded tower door.").locked("iron_key"))
         .with_enemy_spawn("goblin_warrior")
-        .with_enemy_spawn("goblin_shaman"),
+        .with_enemy_spawn("goblin_shaman")
+        .with_loot_table("ironmere_courtyard"),
     );
 
     map.add_location(
@@ -460,11 +475,15 @@ pub fn build_starting_world() -> WorldMap {
             "Ironmere Keep Tower",
             "The interior of the ancient tower. Spiralling stairs lead up to \
              the warlord's throne room. A cache of plundered goods fills the \
-             ground floor. This is the goblin warlord's lair.",
+             ground floor — chests of stolen coin, weapons, and supplies seized \
+             from Embervale's travellers and merchants. The goblin warlord \
+             himself commands from the upper level, his presence announced by \
+             a booming war-cry. This is the goblin warlord's lair.",
             RegionType::Dungeon,
         )
         .with_exit(Exit::new("south", "ironmere_courtyard", "Back to the courtyard."))
-        .with_enemy_spawn("goblin_warlord"),
+        .with_enemy_spawn("goblin_warlord")
+        .with_loot_table("ironmere_tower"),
     );
 
     // =========================================================
@@ -650,13 +669,16 @@ pub fn build_starting_world() -> WorldMap {
              surprisingly large cave. The walls catch the fading daylight and \
              throw it back as prismatic sparks — embedded crystals line every \
              surface. It is beautiful and deadly in equal measure. Strange \
-             scratching sounds come from deeper within.",
+             scratching sounds come from deeper within. Crystal shards glitter \
+             on the floor where they have broken free from the walls.",
             RegionType::Cave,
         )
         .with_exit(Exit::new("east", "valley_north", "East back out to the valley."))
         .with_exit(Exit::new("north", "crystal_cave_depths", "Deeper into the sparkling crystal cave."))
         .with_enemy_spawn("giant_bat")
-        .with_enemy_spawn("cave_bear"),
+        .with_enemy_spawn("cave_bear")
+        .with_enemy_spawn("crystal_golem")
+        .with_loot_table("crystal_cave_entrance"),
     );
 
     map.add_location(
@@ -666,13 +688,16 @@ pub fn build_starting_world() -> WorldMap {
             "The deeper chamber pulses with dim blue-green light from fist-sized \
              crystals. The floor is slick with mineral-rich water. A massive cave \
              bear claims this chamber as its den, bones of past meals heaped in \
-             one corner. Crystal shards glitter on the ground — treasure for those \
-             bold enough to survive.",
+             one corner. A crystal golem — an entity of living crystal animated by \
+             some ancient magic — stands sentinel among the formations. Crystal \
+             shards and rare mineral deposits cover every surface.",
             RegionType::Cave,
         )
         .with_exit(Exit::new("south", "crystal_cave_entrance", "South back to the cave entrance."))
         .with_enemy_spawn("cave_bear")
-        .with_enemy_spawn("giant_bat"),
+        .with_enemy_spawn("crystal_golem")
+        .with_enemy_spawn("giant_bat")
+        .with_loot_table("crystal_cave_depths"),
     );
 
     map.add_location(
@@ -683,7 +708,7 @@ pub fn build_starting_world() -> WorldMap {
              that sunlight never reaches the bottom — the air is cold and perpetually \
              dim. The sound of dripping water mingles with distant inhuman growls. \
              A cave mouth gapes at the northern end of the gorge, reeking of musk \
-             and old blood.",
+             and old blood. Discarded scraps suggest goblins use this as a waypoint.",
             RegionType::Cave,
         )
         .with_exit(Exit::new("north", "valley_northeast", "North back up to the valley floor."))
@@ -691,7 +716,8 @@ pub fn build_starting_world() -> WorldMap {
         .with_exit(Exit::new("down", "shadow_cave_entrance", "Into the cave mouth at the gorge floor."))
         .with_enemy_spawn("goblin_scout")
         .with_enemy_spawn("giant_bat")
-        .with_enemy_spawn("valley_wolf"),
+        .with_enemy_spawn("valley_wolf")
+        .with_loot_table("shadow_gorge"),
     );
 
     map.add_location(
@@ -701,7 +727,8 @@ pub fn build_starting_world() -> WorldMap {
             "The cave is pitch-black save for a faint phosphorescent glow from \
              some of the fungal growths on the walls. The stench is overwhelming — \
              equal parts rot, animal musk, and something older and fouler. Crude \
-             goblin scratches mar the stone walls. Further in, the cave widens \
+             goblin scratches mar the stone walls. Discarded weapons and filthy \
+             bedrolls show this is goblin territory. Further in, the cave widens \
              into a larger chamber.",
             RegionType::Cave,
         )
@@ -709,7 +736,8 @@ pub fn build_starting_world() -> WorldMap {
         .with_exit(Exit::new("north", "shadow_cave_depths", "Deeper into the shadow cave."))
         .with_enemy_spawn("goblin_scout")
         .with_enemy_spawn("goblin_warrior")
-        .with_enemy_spawn("giant_bat"),
+        .with_enemy_spawn("cave_troll")
+        .with_loot_table("shadow_cave_entrance"),
     );
 
     map.add_location(
@@ -718,15 +746,19 @@ pub fn build_starting_world() -> WorldMap {
             "Shadow Cave — Depths",
             "The main chamber of the shadow cave is a sprawling, low-ceilinged \
              space riddled with side tunnels. This is a goblin staging post — \
-             fire pits, crude weapons, and stolen goods fill the space. A goblin \
-             shaman has claimed the back alcove as a ritual space, the walls \
-             daubed with dark symbols. Loot is piled high.",
+             fire pits, crude weapons, and stolen goods fill the space. A cave \
+             troll hunches in one corner, chained by the goblins as a guard beast. \
+             A goblin shaman has claimed the back alcove as a ritual space, the walls \
+             daubed with dark symbols. Loot from raided caravans is piled high \
+             in makeshift chests.",
             RegionType::Cave,
         )
         .with_exit(Exit::new("south", "shadow_cave_entrance", "South back toward the cave entrance."))
         .with_enemy_spawn("goblin_warrior")
         .with_enemy_spawn("goblin_archer")
-        .with_enemy_spawn("goblin_shaman"),
+        .with_enemy_spawn("goblin_shaman")
+        .with_enemy_spawn("cave_troll")
+        .with_loot_table("shadow_cave_depths"),
     );
 
     // --- Derelict Buildings & Settlements ---
@@ -737,14 +769,16 @@ pub fn build_starting_world() -> WorldMap {
             "An old water-mill, long since stopped. The great wheel hangs \
              cracked and still over a dry millrace. Inside, the floor has \
              rotted through in places and the roof beams groan ominously. \
-             Someone — or something — has made a nest in the upper floor. \
-             Old grinding stones and rusted implements litter the space.",
+             Giant bats roost in the upper floor among old grain sacks. \
+             Old grinding stones and rusted iron implements litter the space — \
+             a blacksmith's fortune in abandoned tools.",
             RegionType::Ruins,
         )
         .with_exit(Exit::new("east", "valley_northwest", "East back out to the valley."))
         .with_exit(Exit::new("south", "abandoned_farmstead", "South along a crumbling field wall to the farmstead."))
         .with_enemy_spawn("bandit")
-        .with_enemy_spawn("giant_bat"),
+        .with_enemy_spawn("giant_bat")
+        .with_loot_table("derelict_mill"),
     );
 
     map.add_location(
@@ -754,15 +788,17 @@ pub fn build_starting_world() -> WorldMap {
             "A cluster of collapsed stone buildings that once formed a working \
              farm. The barn still stands, barely — its timbers black with age. \
              Rusted tools hang from hooks and a broken cart sits in the yard. \
-             Bandits have camped here recently; the ashes of a fire are still \
-             warm. A path leads west toward the mountain crags.",
+             Bandits have made this their camp; stolen goods are stashed in \
+             the barn and the ashes of several fires are fresh. A bandit chief \
+             has claimed the farmhouse shell as his own quarters.",
             RegionType::Ruins,
         )
         .with_exit(Exit::new("north", "derelict_mill", "North toward the old mill."))
         .with_exit(Exit::new("east", "valley_west", "East back toward the valley meadows."))
         .with_exit(Exit::new("west", "west_mountain_crags", "West into the mountain crags."))
         .with_enemy_spawn("bandit")
-        .with_enemy_spawn("bandit_chief"),
+        .with_enemy_spawn("bandit_chief")
+        .with_loot_table("abandoned_farmstead"),
     );
 
     map.add_location(
@@ -772,14 +808,16 @@ pub fn build_starting_world() -> WorldMap {
             "A squat stone watchtower — old even by valley standards — squats \
              on a low rise. Its top floor has collapsed inward but the ground \
              level still stands. Arrow slits look out over the northeastern \
-             valley. Graffiti and old camp gear suggest it has been used as \
-             shelter by travellers and bandits alike. From the rise, you can \
-             see much of the valley spread below.",
+             valley. The tower was used as a guard post once; a cache of old \
+             weapons and supplies was left when it was abandoned. Bandits have \
+             been through here recently — fresh graffiti and camp gear attest \
+             to their presence.",
             RegionType::Ruins,
         )
         .with_exit(Exit::new("west", "valley_northeast", "West back into the valley."))
         .with_enemy_spawn("bandit")
-        .with_enemy_spawn("goblin_scout"),
+        .with_enemy_spawn("goblin_scout")
+        .with_loot_table("valley_watchtower"),
     );
 
     map.add_location(
@@ -790,14 +828,17 @@ pub fn build_starting_world() -> WorldMap {
              by two centuries. Only foundation stones and the shells of a few \
              buildings remain. The cobbled central square is cracked and overgrown \
              with weeds. Local legend says Millford was abandoned after a plague \
-             that turned its dead into something else. The entrance to an old crypt \
-             lies beneath the ruined chapel at the hamlet's edge.",
+             that turned its dead into something else. Ancient coins and personal \
+             effects of its vanished inhabitants can still be found amid the \
+             foundations. The entrance to an old crypt lies beneath the ruined \
+             chapel at the hamlet's edge.",
             RegionType::Ruins,
         )
         .with_exit(Exit::new("northwest", "valley_south_meadow", "Northwest back toward the valley meadows."))
         .with_exit(Exit::new("down", "millford_crypt", "Down into the crypt beneath the ruined chapel."))
         .with_enemy_spawn("skeleton_warrior")
-        .with_enemy_spawn("crypt_ghoul"),
+        .with_enemy_spawn("crypt_ghoul")
+        .with_loot_table("millford_ruins"),
     );
 
     // --- Crypts ---
@@ -809,14 +850,17 @@ pub fn build_starting_world() -> WorldMap {
              Tallow candles have burned to stubs on iron holders — someone was \
              here recently. Rows of stone sarcophagi line the walls, several \
              broken open from the inside. The smell of grave-dirt and decay is \
-             thick. Bones scrape against stone in the darkness ahead.",
+             thick. Ancient offering vessels still rest in wall niches — many \
+             untouched for two hundred years. Bones scrape against stone \
+             in the darkness ahead.",
             RegionType::Crypt,
         )
         .with_exit(Exit::new("up", "millford_ruins", "Up and out of the crypt, back to the ruins."))
         .with_exit(Exit::new("north", "millford_crypt_depths", "Deeper into the crypt's lower passages."))
         .with_enemy_spawn("skeleton_warrior")
         .with_enemy_spawn("skeleton_archer")
-        .with_enemy_spawn("crypt_ghoul"),
+        .with_enemy_spawn("crypt_ghoul")
+        .with_loot_table("millford_crypt"),
     );
 
     map.add_location(
@@ -828,13 +872,16 @@ pub fn build_starting_world() -> WorldMap {
              Crude iron sconces hold guttering torches (recently lit — by whom?). \
              Niches in the walls hold mummified remains wrapped in rotting cloth. \
              At the far end, a larger chamber serves as an ossuary, floor to \
-             ceiling with stacked bones. Something enormous moves among them.",
+             ceiling with stacked bones. Something enormous moves among them — \
+             a great crypt ghoul, grown fat on the dead of Millford. Ancient \
+             grave goods are piled against the far wall.",
             RegionType::Crypt,
         )
         .with_exit(Exit::new("south", "millford_crypt", "South back to the upper crypt."))
         .with_enemy_spawn("crypt_ghoul")
         .with_enemy_spawn("skeleton_warrior")
-        .with_enemy_spawn("wraith"),
+        .with_enemy_spawn("wraith")
+        .with_loot_table("millford_crypt_depths"),
     );
 
     // --- Ancient Barrow ---
@@ -865,7 +912,9 @@ pub fn build_starting_world() -> WorldMap {
              have to duck. Dressed stone walls glisten with moisture. Side niches \
              hold the grave goods of ancient warriors: corroded swords, shattered \
              pottery, crumbling bones. The passage opens into a small antechamber \
-             where a stone altar stands. Deeper still, a sealed iron door \
+             where a stone altar stands. Armed skeletons in corroded armour pace \
+             the chamber — barrow knights, ancient warriors bound to guard their \
+             lord's resting place for eternity. Deeper still, a sealed iron door \
              separates the antechamber from the burial lord's chamber.",
             RegionType::Crypt,
         )
@@ -873,7 +922,9 @@ pub fn build_starting_world() -> WorldMap {
         .with_exit(Exit::new("north", "barrow_lord_chamber", "Through the iron door into the burial lord's chamber."))
         .with_enemy_spawn("skeleton_warrior")
         .with_enemy_spawn("skeleton_archer")
-        .with_enemy_spawn("wraith"),
+        .with_enemy_spawn("barrow_knight")
+        .with_enemy_spawn("wraith")
+        .with_loot_table("barrow_interior"),
     );
 
     map.add_location(
@@ -886,12 +937,15 @@ pub fn build_starting_world() -> WorldMap {
              surround it — tarnished gold, iron arms and armour, offerings long \
              since desiccated. The chieftain does not rest easily: a wraith of \
              terrible power rises from the sarcophagus, ancient hatred in its \
-             hollow eyes.",
+             hollow eyes. A barrow knight stands at either side of the sarcophagus, \
+             motionless until disturbed.",
             RegionType::Tomb,
         )
         .with_exit(Exit::new("south", "barrow_interior", "South back to the barrow antechamber."))
         .with_enemy_spawn("wraith")
-        .with_enemy_spawn("skeleton_warrior"),
+        .with_enemy_spawn("barrow_knight")
+        .with_enemy_spawn("skeleton_warrior")
+        .with_loot_table("barrow_lord_chamber"),
     );
 
     // --- Valley King's Tomb ---
@@ -922,15 +976,19 @@ pub fn build_starting_world() -> WorldMap {
              Pillars of carved stone support a vaulted ceiling lost in shadow. \
              Faded frescoes depict a valley kingdom of great power: armies, \
              harvest, kingship — all ground to dust. The air is utterly still \
-             and tainted with the smell of preserved death. Stone guardians \
-             flank the inner doorway, and they are not merely decorative.",
+             and tainted with the smell of preserved death. Mummified guardians \
+             in ancient armour flank the inner doorway — not merely decorative, \
+             but animated by the Valley King's burial rites. Offering tables \
+             line the walls, bearing ancient grave goods.",
             RegionType::Tomb,
         )
         .with_exit(Exit::new("out", "valley_tomb_approach", "Out through the stone slabs to the approach."))
         .with_exit(Exit::new("north", "tomb_sanctum", "Into the tomb's inner sanctum."))
         .with_enemy_spawn("skeleton_warrior")
         .with_enemy_spawn("skeleton_archer")
-        .with_enemy_spawn("tomb_guardian"),
+        .with_enemy_spawn("mummified_guard")
+        .with_enemy_spawn("tomb_guardian")
+        .with_loot_table("tomb_antechamber"),
     );
 
     map.add_location(
@@ -940,15 +998,19 @@ pub fn build_starting_world() -> WorldMap {
             "The sanctum is the heart of the tomb — a circular chamber where the \
              Valley King himself was laid to rest an age ago. His golden sarcophagus \
              stands atop a raised dais, surrounded by the mummified remains of his \
-             honour guard, still upright in their decayed armour. Something ancient \
-             and terrible has claimed this place as its own: a tomb guardian of \
-             immense power stands sentinel, its stone flesh cracked but unyielding, \
-             its eyes burning with eldritch light.",
+             honour guard, still upright in their decayed armour. The Valley King's \
+             burial hoard gleams around the dais — tarnished gold, ancient weapons, \
+             and relics of immense power. Something ancient and terrible has claimed \
+             this place as its own: a tomb guardian of immense power stands sentinel, \
+             its stone flesh cracked but unyielding, its eyes burning with eldritch \
+             light.",
             RegionType::Tomb,
         )
         .with_exit(Exit::new("south", "tomb_antechamber", "South back to the antechamber."))
         .with_enemy_spawn("tomb_guardian")
-        .with_enemy_spawn("wraith"),
+        .with_enemy_spawn("mummified_guard")
+        .with_enemy_spawn("wraith")
+        .with_loot_table("tomb_sanctum"),
     );
 
     // Mark the starting location as visited

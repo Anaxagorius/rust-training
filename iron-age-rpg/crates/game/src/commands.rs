@@ -193,6 +193,10 @@ pub fn handle_command(input: &str, state: &mut GameState) -> CommandResult {
             }
         }
 
+        "search" | "examine" | "loot" => {
+            search_location(state)
+        }
+
         "flee" => {
             "You back away cautiously. (Use 'flee' during a 'fight' encounter.)".to_string()
         }
@@ -609,6 +613,64 @@ fn run_combat(state: &mut GameState, enemy_id: &str, rng: &mut impl rand::Rng) -
     }
 }
 
+fn search_location(state: &mut GameState) -> String {
+    let loc = state.world.current_location();
+    let (loc_id, loot_table_id, is_looted) = match loc {
+        None => return "You are nowhere.".to_string(),
+        Some(l) => (l.id.clone(), l.loot_table_id.clone(), l.is_looted),
+    };
+
+    if is_looted {
+        return "You have already searched this area thoroughly. Nothing remains.".to_string();
+    }
+
+    let Some(table_id) = loot_table_id else {
+        return "You search the area carefully but find nothing of particular interest.".to_string();
+    };
+
+    let Some(table) = iron_age_data::find_loot_table(&table_id) else {
+        return "You search the area but find nothing of interest.".to_string();
+    };
+
+    let mut rng = rand::rngs::StdRng::seed_from_u64(
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map_or(state.turn as u64, |d| d.subsec_nanos() as u64 + state.turn as u64)
+    );
+
+    let flavor = table.flavor_text.clone();
+    let (gold, items) = table.roll(&mut rng);
+
+    // Mark as looted
+    if let Some(l) = state.world.locations.get_mut(&loc_id) {
+        l.is_looted = true;
+    }
+
+    let mut out = format!("{}\n", flavor);
+
+    if gold > 0 {
+        state.gold += gold;
+        out.push_str(&format!("  Found: {} gold\n", gold));
+    }
+
+    let mut found_any_items = false;
+    for (item_id, qty) in &items {
+        if state.give_item(item_id, *qty) {
+            let name = iron_age_data::find_item(item_id)
+                .map(|i| i.name)
+                .unwrap_or_else(|| item_id.replace('_', " "));
+            out.push_str(&format!("  Found: {} x{}\n", name, qty));
+            found_any_items = true;
+        }
+    }
+
+    if gold == 0 && !found_any_items {
+        out.push_str("  Nothing useful found.\n");
+    }
+
+    out
+}
+
 trait GenIndex {
     fn gen_index(&mut self, len: usize) -> usize;
 }
@@ -633,6 +695,9 @@ impl<R: rand::Rng> GenIndex for R {
 ///
 /// At valley difficulty (2), with danger_steps accumulated from prior steps:
 ///   step 1 → 12%   step 3 → 26%   step 5 → 40%   step 8 → 61%
+///
+/// Enemy selection prefers the current location's `enemy_spawn_ids`, falling
+/// back to the global difficulty-filtered pool only when no spawns are defined.
 fn maybe_encounter(state: &mut GameState, difficulty: u32) -> Vec<String> {
     let mut rng = rand::rngs::StdRng::seed_from_u64(
         std::time::SystemTime::now()
@@ -644,7 +709,23 @@ fn maybe_encounter(state: &mut GameState, difficulty: u32) -> Vec<String> {
     let encounter_chance = (base + step_bonus).min(0.95);
 
     let roll: f32 = rng.gen();
-    if roll < encounter_chance {
+    if roll >= encounter_chance {
+        return vec![];
+    }
+
+    // Prefer location-specific enemy spawns for thematic encounters
+    let spawn_id: Option<String> = state.world.current_location()
+        .filter(|l| !l.enemy_spawn_ids.is_empty())
+        .map(|l| {
+            let idx = rng.gen_index(l.enemy_spawn_ids.len());
+            l.enemy_spawn_ids[idx].clone()
+        });
+
+    if let Some(id) = spawn_id {
+        let msg = run_combat(state, &id, &mut rng);
+        vec![msg]
+    } else {
+        // Fall back to the difficulty-filtered global pool
         use iron_age_data::all_enemy_templates;
         let pool: Vec<_> = all_enemy_templates()
             .into_iter()
@@ -657,7 +738,5 @@ fn maybe_encounter(state: &mut GameState, difficulty: u32) -> Vec<String> {
         let template_id = template.id.clone();
         let msg = run_combat_with(state, enemy, &template_id, &mut rng);
         vec![msg]
-    } else {
-        vec![]
     }
 }

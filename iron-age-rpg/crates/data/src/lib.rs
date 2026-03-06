@@ -505,6 +505,108 @@ pub fn all_enemy_templates() -> Vec<EnemyTemplate> {
             abilities: vec!["Stone Fist".to_string(), "Ancient Ward".to_string(), "Tremor Strike".to_string()],
             on_death_status: None,
         },
+
+        // ── Cave & Dungeon Specialists ────────────────────────────────────────
+        EnemyTemplate {
+            id: "crystal_golem".to_string(),
+            name: "Crystal Golem".to_string(),
+            level: 5,
+            base_hp: 100,
+            stats: Stats::new(13, 5, 5, 14, 3, 1),
+            armor: 8,
+            weapon_damage: 15,
+            damage_type: DamageType::Physical,
+            resistances: {
+                let mut r = ElementalResistances::none();
+                r.physical = 25;
+                r.nature = 15;
+                r.poison = 100;
+                r.fire = -15;
+                r
+            },
+            xp_reward: 160,
+            gold_min: 0, gold_max: 5,
+            loot_item_ids: vec!["crystal_shard".to_string(), "crystalline_dust".to_string()],
+            description: "A hulking construct of living crystal animated by the cave's \
+                          ancient magical energies. Its faceted body refracts light \
+                          into blinding beams.".to_string(),
+            abilities: vec!["Crystal Shatter".to_string(), "Refraction Beam".to_string()],
+            on_death_status: None,
+        },
+        EnemyTemplate {
+            id: "cave_troll".to_string(),
+            name: "Cave Troll".to_string(),
+            level: 4,
+            base_hp: 90,
+            stats: Stats::new(13, 2, 2, 13, 3, 1),
+            armor: 4,
+            weapon_damage: 16,
+            damage_type: DamageType::Physical,
+            resistances: {
+                let mut r = ElementalResistances::none();
+                r.physical = 10;
+                r.fire = -25;
+                r
+            },
+            xp_reward: 130,
+            gold_min: 0, gold_max: 5,
+            loot_item_ids: vec!["iron_ingot".to_string(), "tattered_cloth".to_string()],
+            description: "A cave-dwelling troll with moss-covered hide and massive fists. \
+                          Slow but incredibly powerful, and capable of limited regeneration.".to_string(),
+            abilities: vec!["Smash".to_string(), "Regenerate".to_string()],
+            on_death_status: None,
+        },
+        EnemyTemplate {
+            id: "barrow_knight".to_string(),
+            name: "Barrow Knight".to_string(),
+            level: 5,
+            base_hp: 80,
+            stats: Stats::new(11, 3, 3, 9, 7, 2),
+            armor: 7,
+            weapon_damage: 14,
+            damage_type: DamageType::Physical,
+            resistances: {
+                let mut r = ElementalResistances::none();
+                r.poison = 100;
+                r.physical = 15;
+                r.fire = -20;
+                r
+            },
+            xp_reward: 140,
+            gold_min: 0, gold_max: 8,
+            loot_item_ids: vec!["ancient_coin".to_string(), "mouldering_chainmail".to_string(), "carved_bone".to_string()],
+            description: "An ancient warrior bound forever to guard their lord's barrow. \
+                          Clad in corroded armour and wielding a rusted but deadly blade, \
+                          the barrow knight fights with centuries of martial memory.".to_string(),
+            abilities: vec!["Shield Wall".to_string(), "Bone Cleave".to_string()],
+            on_death_status: None,
+        },
+        EnemyTemplate {
+            id: "mummified_guard".to_string(),
+            name: "Mummified Guard".to_string(),
+            level: 6,
+            base_hp: 110,
+            stats: Stats::new(12, 4, 4, 14, 4, 2),
+            armor: 8,
+            weapon_damage: 15,
+            damage_type: DamageType::Physical,
+            resistances: {
+                let mut r = ElementalResistances::none();
+                r.poison = 100;
+                r.physical = 20;
+                r.fire = -30;
+                r.nature = 15;
+                r
+            },
+            xp_reward: 200,
+            gold_min: 0, gold_max: 10,
+            loot_item_ids: vec!["ancient_coin".to_string(), "carved_bone".to_string(), "ghost_essence".to_string()],
+            description: "A Valley King's guard, preserved for an age in aromatic resins. \
+                          Wrapped in rotting linen strips and armed with an iron khopesh, \
+                          it responds to intrusion with mechanical, relentless aggression.".to_string(),
+            abilities: vec!["Ancient Grip".to_string(), "Cursed Blow".to_string()],
+            on_death_status: Some(StatusEffect::Poison { damage_per_turn: 2, turns_remaining: 3 }),
+        },
     ]
 }
 
@@ -608,12 +710,522 @@ pub fn all_items() -> Vec<Item> {
         Item::new_consumable("ghost_essence", "Ghost Essence", ItemType::CraftingMaterial, 1),
         Item::new_consumable("tattered_cloth", "Tattered Cloth", ItemType::CraftingMaterial, 10),
         Item::new_armor("bandit_cloak", "Bandit's Cloak", EquipSlot::Cape, MaterialTier::Wood, ItemRarity::Common, 3),
+
+        // New crafting materials
+        Item::new_consumable("crystalline_dust", "Crystalline Dust", ItemType::CraftingMaterial, 10),
+        Item::new_consumable("carved_bone", "Carved Bone", ItemType::CraftingMaterial, 10),
+        Item::new_consumable("ancient_tome", "Ancient Tome", ItemType::CraftingMaterial, 1),
+        Item::new_consumable("grave_dust", "Grave Dust", ItemType::CraftingMaterial, 10),
+
+        // New armor from POIs
+        Item::new_armor("mouldering_chainmail", "Mouldering Chainmail", EquipSlot::Torso, MaterialTier::Iron, ItemRarity::Common, 6),
+        Item::new_armor("barrow_lord_helm", "Barrow Lord's Helm", EquipSlot::Helmet, MaterialTier::Iron, ItemRarity::Rare, 5),
+
+        // New weapons from POIs
+        Item::new_weapon("runic_short_sword", "Runic Short Sword", ItemType::ShortSword, MaterialTier::Iron, ItemRarity::Rare, 13),
+
+        // Unique accessories — rings and amulets with stat bonuses
+        {
+            let item = Item {
+                id: "crystal_ring".to_string(),
+                name: "Crystal Ring".to_string(),
+                item_type: ItemType::Ring,
+                material: None,
+                rarity: ItemRarity::Rare,
+                weight: 0.1,
+                value: 120,
+                damage_base: 0,
+                armor_base: 0,
+                stat_requirements: Stats::zeroed(),
+                stat_bonuses: Stats::new(0, 2, 1, 0, 0, 0),
+                equip_slot: Some(EquipSlot::Ring1),
+                stack_size: 1,
+                quantity: 1,
+                description: "A ring carved from a crystal shard, imbued with magical resonance. +2 INT, +1 WIS.".to_string(),
+                effects: Vec::new(),
+                is_two_handed: false,
+            };
+            item
+        },
+        {
+            Item {
+                id: "ancient_amulet".to_string(),
+                name: "Ancient Amulet".to_string(),
+                item_type: ItemType::Amulet,
+                material: None,
+                rarity: ItemRarity::Rare,
+                weight: 0.2,
+                value: 150,
+                damage_base: 0,
+                armor_base: 0,
+                stat_requirements: Stats::zeroed(),
+                stat_bonuses: Stats::new(1, 0, 0, 2, 0, 0),
+                equip_slot: Some(EquipSlot::Amulet),
+                stack_size: 1,
+                quantity: 1,
+                description: "A tarnished iron-age amulet of great antiquity. +1 STR, +2 CON.".to_string(),
+                effects: Vec::new(),
+                is_two_handed: false,
+            }
+        },
+        {
+            Item {
+                id: "tomb_seal_ring".to_string(),
+                name: "Tomb Seal Ring".to_string(),
+                item_type: ItemType::Ring,
+                material: None,
+                rarity: ItemRarity::Uncommon,
+                weight: 0.1,
+                value: 80,
+                damage_base: 0,
+                armor_base: 0,
+                stat_requirements: Stats::zeroed(),
+                stat_bonuses: Stats::new(0, 0, 2, 0, 0, 2),
+                equip_slot: Some(EquipSlot::Ring1),
+                stack_size: 1,
+                quantity: 1,
+                description: "The seal ring of a Valley King's official. +2 WIS, +2 CHA.".to_string(),
+                effects: Vec::new(),
+                is_two_handed: false,
+            }
+        },
+        {
+            Item {
+                id: "valley_king_crown".to_string(),
+                name: "Valley King's Crown".to_string(),
+                item_type: ItemType::ArmorPiece(EquipSlot::Helmet),
+                material: Some(MaterialTier::Iron),
+                rarity: ItemRarity::Legendary,
+                weight: 1.0,
+                value: 500,
+                damage_base: 0,
+                armor_base: 8,
+                stat_requirements: Stats::zeroed(),
+                stat_bonuses: Stats::new(3, 0, 0, 3, 0, 3),
+                equip_slot: Some(EquipSlot::Helmet),
+                stack_size: 1,
+                quantity: 1,
+                description: "The legendary crown of Embervale's ancient Valley King. \
+                              Its tarnished gold still carries immense authority. \
+                              +3 STR, +3 CON, +3 CHA.".to_string(),
+                effects: Vec::new(),
+                is_two_handed: false,
+            }
+        },
     ]
 }
 
 /// Find a catalog item by id.
 pub fn find_item(id: &str) -> Option<Item> {
     all_items().into_iter().find(|i| i.id == id)
+}
+
+// ── Location Loot Tables ──────────────────────────────────────────────────────
+
+/// A single entry in a loot table with weighted probability.
+#[derive(Debug, Clone)]
+pub struct LootEntry {
+    pub item_id: String,
+    /// Relative probability weight (higher = more likely).
+    pub weight: u32,
+    pub quantity_min: u32,
+    pub quantity_max: u32,
+}
+
+/// A loot table associated with a searchable location.
+#[derive(Debug, Clone)]
+pub struct LootTable {
+    pub id: String,
+    /// Flavour text shown when the player searches this location.
+    pub flavor_text: String,
+    /// Items that are always present when the location is searched.
+    pub guaranteed_items: Vec<(String, u32)>,
+    /// Weighted pool of optional items.
+    pub random_entries: Vec<LootEntry>,
+    pub gold_min: u32,
+    pub gold_max: u32,
+    /// Number of times to draw from the random pool.
+    pub roll_count: u32,
+}
+
+impl LootTable {
+    /// Roll this loot table and return (gold, item_id/quantity pairs).
+    pub fn roll(&self, rng: &mut impl Rng) -> (u32, Vec<(String, u32)>) {
+        let gold = if self.gold_max > self.gold_min {
+            rng.gen_range(self.gold_min..=self.gold_max)
+        } else {
+            self.gold_min
+        };
+
+        let mut items: Vec<(String, u32)> = self.guaranteed_items.clone();
+
+        let total_weight: u32 = self.random_entries.iter().map(|e| e.weight).sum();
+        if total_weight > 0 {
+            for _ in 0..self.roll_count {
+                let roll = rng.gen_range(0..total_weight);
+                let mut cumulative = 0u32;
+                for entry in &self.random_entries {
+                    cumulative += entry.weight;
+                    if roll < cumulative {
+                        let qty = if entry.quantity_max > entry.quantity_min {
+                            rng.gen_range(entry.quantity_min..=entry.quantity_max)
+                        } else {
+                            entry.quantity_min
+                        };
+                        if qty > 0 {
+                            if let Some(existing) = items.iter_mut().find(|(id, _)| id == &entry.item_id) {
+                                existing.1 += qty;
+                            } else {
+                                items.push((entry.item_id.clone(), qty));
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
+        (gold, items)
+    }
+}
+
+/// Find a loot table by location id.
+pub fn find_loot_table(id: &str) -> Option<LootTable> {
+    all_loot_tables().into_iter().find(|t| t.id == id)
+}
+
+/// All searchable location loot tables.
+pub fn all_loot_tables() -> Vec<LootTable> {
+    vec![
+        // ── Wolf Den ─────────────────────────────────────────────────────────
+        LootTable {
+            id: "wolf_den_entrance".to_string(),
+            flavor_text: "You search among the scattered bones and debris at the cave threshold. \
+                          The remains of past victims yield a few useful items.".to_string(),
+            guaranteed_items: vec![("bones".to_string(), 2)],
+            random_entries: vec![
+                LootEntry { item_id: "wolf_pelt".to_string(), weight: 60, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "meat".to_string(), weight: 40, quantity_min: 1, quantity_max: 2 },
+                LootEntry { item_id: "sinew".to_string(), weight: 30, quantity_min: 1, quantity_max: 1 },
+            ],
+            gold_min: 0, gold_max: 3,
+            roll_count: 1,
+        },
+        LootTable {
+            id: "wolf_den_lair".to_string(),
+            flavor_text: "You root through the alpha's trophies — gnawed gear and plunder \
+                          from past victims. A hunter's pack lies intact beneath a shelf of rock.".to_string(),
+            guaranteed_items: vec![
+                ("dire_wolf_fang".to_string(), 1),
+                ("wolf_pelt".to_string(), 2),
+            ],
+            random_entries: vec![
+                LootEntry { item_id: "alpha_pelt".to_string(), weight: 70, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "health_potion".to_string(), weight: 50, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "leather".to_string(), weight: 40, quantity_min: 1, quantity_max: 3 },
+                LootEntry { item_id: "crude_knife".to_string(), weight: 30, quantity_min: 1, quantity_max: 1 },
+            ],
+            gold_min: 5, gold_max: 15,
+            roll_count: 2,
+        },
+        // ── Crystal Cave ─────────────────────────────────────────────────────
+        LootTable {
+            id: "crystal_cave_entrance".to_string(),
+            flavor_text: "Crystal shards have fallen from the walls. You gather \
+                          what you can without disturbing the delicate formations.".to_string(),
+            guaranteed_items: vec![("crystal_shard".to_string(), 2)],
+            random_entries: vec![
+                LootEntry { item_id: "crystalline_dust".to_string(), weight: 60, quantity_min: 1, quantity_max: 3 },
+                LootEntry { item_id: "crystal_shard".to_string(), weight: 40, quantity_min: 1, quantity_max: 2 },
+            ],
+            gold_min: 0, gold_max: 5,
+            roll_count: 1,
+        },
+        LootTable {
+            id: "crystal_cave_depths".to_string(),
+            flavor_text: "The crystal formations here are magnificent. Embedded deep in the \
+                          growth you find items drawn here over centuries by the crystal's power. \
+                          A bear's hoard of curiosities spills from a rocky shelf.".to_string(),
+            guaranteed_items: vec![
+                ("bear_claw".to_string(), 1),
+                ("crystal_shard".to_string(), 3),
+                ("crystalline_dust".to_string(), 2),
+            ],
+            random_entries: vec![
+                LootEntry { item_id: "crystal_ring".to_string(), weight: 40, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "health_potion".to_string(), weight: 60, quantity_min: 1, quantity_max: 2 },
+                LootEntry { item_id: "iron_ingot".to_string(), weight: 50, quantity_min: 1, quantity_max: 2 },
+                LootEntry { item_id: "crystal_shard".to_string(), weight: 80, quantity_min: 2, quantity_max: 4 },
+            ],
+            gold_min: 10, gold_max: 30,
+            roll_count: 3,
+        },
+        // ── Shadow Gorge & Cave ───────────────────────────────────────────────
+        LootTable {
+            id: "shadow_gorge".to_string(),
+            flavor_text: "You search the gorge floor among wet rocks and refuse. \
+                          Someone camped here recently and left in a hurry.".to_string(),
+            guaranteed_items: vec![],
+            random_entries: vec![
+                LootEntry { item_id: "meat".to_string(), weight: 40, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "herbs".to_string(), weight: 30, quantity_min: 1, quantity_max: 2 },
+                LootEntry { item_id: "crude_knife".to_string(), weight: 20, quantity_min: 1, quantity_max: 1 },
+            ],
+            gold_min: 0, gold_max: 4,
+            roll_count: 1,
+        },
+        LootTable {
+            id: "shadow_cave_entrance".to_string(),
+            flavor_text: "Goblin scratches cover every surface. Discarded weapons and refuse \
+                          litter the ground — much of it stolen from travellers.".to_string(),
+            guaranteed_items: vec![("tattered_cloth".to_string(), 1)],
+            random_entries: vec![
+                LootEntry { item_id: "crude_knife".to_string(), weight: 50, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "crude_bow".to_string(), weight: 30, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "sinew".to_string(), weight: 40, quantity_min: 1, quantity_max: 2 },
+                LootEntry { item_id: "feather".to_string(), weight: 35, quantity_min: 2, quantity_max: 4 },
+            ],
+            gold_min: 2, gold_max: 8,
+            roll_count: 2,
+        },
+        LootTable {
+            id: "shadow_cave_depths".to_string(),
+            flavor_text: "This is a goblin staging post. Stolen goods, crude weapons, \
+                          and plundered supplies are piled high in makeshift chests. \
+                          You pick through the haul carefully.".to_string(),
+            guaranteed_items: vec![
+                ("iron_ingot".to_string(), 2),
+                ("crude_sword".to_string(), 1),
+            ],
+            random_entries: vec![
+                LootEntry { item_id: "iron_short_sword".to_string(), weight: 30, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "health_potion".to_string(), weight: 50, quantity_min: 1, quantity_max: 2 },
+                LootEntry { item_id: "leather".to_string(), weight: 40, quantity_min: 2, quantity_max: 4 },
+                LootEntry { item_id: "tattered_cloth".to_string(), weight: 60, quantity_min: 1, quantity_max: 3 },
+                LootEntry { item_id: "shaman_staff".to_string(), weight: 20, quantity_min: 1, quantity_max: 1 },
+            ],
+            gold_min: 15, gold_max: 40,
+            roll_count: 3,
+        },
+        // ── Derelict Buildings ────────────────────────────────────────────────
+        LootTable {
+            id: "derelict_mill".to_string(),
+            flavor_text: "You search the rotting interior. Old tools and long-forgotten \
+                          stores are scattered about — some still salvageable.".to_string(),
+            guaranteed_items: vec![("wood".to_string(), 2)],
+            random_entries: vec![
+                LootEntry { item_id: "iron_ingot".to_string(), weight: 30, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "wood_shaft".to_string(), weight: 50, quantity_min: 1, quantity_max: 3 },
+                LootEntry { item_id: "crude_knife".to_string(), weight: 20, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "feather".to_string(), weight: 40, quantity_min: 2, quantity_max: 5 },
+            ],
+            gold_min: 0, gold_max: 6,
+            roll_count: 2,
+        },
+        LootTable {
+            id: "abandoned_farmstead".to_string(),
+            flavor_text: "The bandit camp is littered with stolen supplies and discarded gear. \
+                          You make the most of it — bandits always steal more than they can carry.".to_string(),
+            guaranteed_items: vec![("tattered_cloth".to_string(), 1)],
+            random_entries: vec![
+                LootEntry { item_id: "iron_ingot".to_string(), weight: 40, quantity_min: 1, quantity_max: 2 },
+                LootEntry { item_id: "health_potion".to_string(), weight: 30, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "crude_knife".to_string(), weight: 50, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "bandit_cloak".to_string(), weight: 20, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "leather".to_string(), weight: 40, quantity_min: 1, quantity_max: 2 },
+            ],
+            gold_min: 8, gold_max: 20,
+            roll_count: 2,
+        },
+        LootTable {
+            id: "valley_watchtower".to_string(),
+            flavor_text: "You root through the tower's collapsed upper floor. \
+                          Someone left supplies here not long ago — a guard cache, \
+                          abandoned when the post was given up.".to_string(),
+            guaranteed_items: vec![],
+            random_entries: vec![
+                LootEntry { item_id: "shortbow".to_string(), weight: 30, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "iron_ingot".to_string(), weight: 40, quantity_min: 1, quantity_max: 2 },
+                LootEntry { item_id: "wood_shaft".to_string(), weight: 50, quantity_min: 1, quantity_max: 3 },
+                LootEntry { item_id: "leather".to_string(), weight: 30, quantity_min: 1, quantity_max: 2 },
+                LootEntry { item_id: "feather".to_string(), weight: 45, quantity_min: 3, quantity_max: 6 },
+            ],
+            gold_min: 3, gold_max: 12,
+            roll_count: 2,
+        },
+        LootTable {
+            id: "millford_ruins".to_string(),
+            flavor_text: "You sift through the overgrown foundations. Old coins and personal \
+                          trinkets remain from Millford's vanished inhabitants — undisturbed \
+                          for two centuries.".to_string(),
+            guaranteed_items: vec![("ancient_coin".to_string(), 2)],
+            random_entries: vec![
+                LootEntry { item_id: "herbs".to_string(), weight: 50, quantity_min: 1, quantity_max: 3 },
+                LootEntry { item_id: "bones".to_string(), weight: 40, quantity_min: 1, quantity_max: 2 },
+                LootEntry { item_id: "tattered_cloth".to_string(), weight: 30, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "ancient_coin".to_string(), weight: 40, quantity_min: 1, quantity_max: 3 },
+            ],
+            gold_min: 0, gold_max: 5,
+            roll_count: 2,
+        },
+        // ── Crypts ────────────────────────────────────────────────────────────
+        LootTable {
+            id: "millford_crypt".to_string(),
+            flavor_text: "You inspect the broken sarcophagi. The grave goods were plundered \
+                          long ago, but fragments remain in the wall niches — offerings \
+                          placed for the dead that survived the centuries.".to_string(),
+            guaranteed_items: vec![
+                ("bones".to_string(), 2),
+                ("ancient_coin".to_string(), 1),
+            ],
+            random_entries: vec![
+                LootEntry { item_id: "ancient_coin".to_string(), weight: 50, quantity_min: 1, quantity_max: 3 },
+                LootEntry { item_id: "tattered_cloth".to_string(), weight: 40, quantity_min: 1, quantity_max: 2 },
+                LootEntry { item_id: "carved_bone".to_string(), weight: 30, quantity_min: 1, quantity_max: 2 },
+                LootEntry { item_id: "antidote".to_string(), weight: 20, quantity_min: 1, quantity_max: 1 },
+            ],
+            gold_min: 0, gold_max: 8,
+            roll_count: 2,
+        },
+        LootTable {
+            id: "millford_crypt_depths".to_string(),
+            flavor_text: "The ossuary is a grim trove. Among the stacked bones you find \
+                          offerings placed centuries ago — personal effects of Millford's \
+                          dead that no one living knew to claim.".to_string(),
+            guaranteed_items: vec![
+                ("ancient_coin".to_string(), 3),
+                ("ghost_essence".to_string(), 1),
+            ],
+            random_entries: vec![
+                LootEntry { item_id: "mouldering_chainmail".to_string(), weight: 25, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "crude_sword".to_string(), weight: 20, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "carved_bone".to_string(), weight: 40, quantity_min: 1, quantity_max: 3 },
+                LootEntry { item_id: "witch_talisman".to_string(), weight: 15, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "health_potion".to_string(), weight: 20, quantity_min: 1, quantity_max: 1 },
+            ],
+            gold_min: 5, gold_max: 20,
+            roll_count: 3,
+        },
+        LootTable {
+            id: "barrow_interior".to_string(),
+            flavor_text: "You examine the grave-niche offerings of the ancient warriors. \
+                          Some items have survived the ages in the sealed passages — \
+                          corroded but still serviceable.".to_string(),
+            guaranteed_items: vec![
+                ("ancient_coin".to_string(), 2),
+                ("carved_bone".to_string(), 1),
+            ],
+            random_entries: vec![
+                LootEntry { item_id: "iron_spear".to_string(), weight: 25, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "mouldering_chainmail".to_string(), weight: 20, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "ancient_coin".to_string(), weight: 50, quantity_min: 2, quantity_max: 5 },
+                LootEntry { item_id: "bones".to_string(), weight: 60, quantity_min: 1, quantity_max: 3 },
+                LootEntry { item_id: "ghost_essence".to_string(), weight: 20, quantity_min: 1, quantity_max: 1 },
+            ],
+            gold_min: 5, gold_max: 20,
+            roll_count: 2,
+        },
+        LootTable {
+            id: "barrow_lord_chamber".to_string(),
+            flavor_text: "You approach the chieftain's sarcophagus and claim the burial \
+                          treasures of an iron-age king. The hoard is ancient and potent — \
+                          weapons and armour wrought by smiths whose craft has been lost for \
+                          two centuries.".to_string(),
+            guaranteed_items: vec![
+                ("ancient_coin".to_string(), 5),
+                ("ghost_essence".to_string(), 1),
+            ],
+            random_entries: vec![
+                LootEntry { item_id: "runic_short_sword".to_string(), weight: 50, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "ancient_amulet".to_string(), weight: 40, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "barrow_lord_helm".to_string(), weight: 35, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "health_potion".to_string(), weight: 30, quantity_min: 1, quantity_max: 2 },
+                LootEntry { item_id: "carved_bone".to_string(), weight: 60, quantity_min: 2, quantity_max: 4 },
+            ],
+            gold_min: 20, gold_max: 50,
+            roll_count: 3,
+        },
+        // ── Ironmere Keep ─────────────────────────────────────────────────────
+        LootTable {
+            id: "ironmere_courtyard".to_string(),
+            flavor_text: "You search the goblin encampment. Stolen goods and crude supplies \
+                          fill makeshift chests — plunder from raided caravans and farms.".to_string(),
+            guaranteed_items: vec![
+                ("iron_ingot".to_string(), 2),
+                ("tattered_cloth".to_string(), 1),
+            ],
+            random_entries: vec![
+                LootEntry { item_id: "crude_sword".to_string(), weight: 40, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "health_potion".to_string(), weight: 30, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "leather".to_string(), weight: 50, quantity_min: 1, quantity_max: 2 },
+                LootEntry { item_id: "iron_ingot".to_string(), weight: 30, quantity_min: 1, quantity_max: 2 },
+            ],
+            gold_min: 10, gold_max: 25,
+            roll_count: 2,
+        },
+        LootTable {
+            id: "ironmere_tower".to_string(),
+            flavor_text: "The plundered cache in the tower's ground floor holds considerable \
+                          wealth — valley merchants' goods, tribute extorted from travellers, \
+                          and the warlord's own hoard of spoils. A chest in the corner \
+                          was clearly the warlord's personal treasury.".to_string(),
+            guaranteed_items: vec![
+                ("iron_ingot".to_string(), 3),
+                ("health_potion".to_string(), 2),
+                ("leather".to_string(), 3),
+            ],
+            random_entries: vec![
+                LootEntry { item_id: "iron_short_sword".to_string(), weight: 30, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "iron_long_sword".to_string(), weight: 15, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "leather_helmet".to_string(), weight: 25, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "leather_torso".to_string(), weight: 20, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "shaman_staff".to_string(), weight: 20, quantity_min: 1, quantity_max: 1 },
+            ],
+            gold_min: 30, gold_max: 70,
+            roll_count: 3,
+        },
+        // ── Valley King's Tomb ────────────────────────────────────────────────
+        LootTable {
+            id: "tomb_antechamber".to_string(),
+            flavor_text: "You investigate the stone guardians' alcoves and the faded offering \
+                          tables. The Valley King did not go unaccompanied into death — \
+                          his honour guard took their worldly possessions with them.".to_string(),
+            guaranteed_items: vec![
+                ("ancient_coin".to_string(), 4),
+                ("bones".to_string(), 2),
+            ],
+            random_entries: vec![
+                LootEntry { item_id: "mouldering_chainmail".to_string(), weight: 30, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "ghost_essence".to_string(), weight: 25, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "carved_bone".to_string(), weight: 50, quantity_min: 1, quantity_max: 3 },
+                LootEntry { item_id: "health_potion".to_string(), weight: 30, quantity_min: 1, quantity_max: 2 },
+                LootEntry { item_id: "tomb_seal_ring".to_string(), weight: 20, quantity_min: 1, quantity_max: 1 },
+            ],
+            gold_min: 15, gold_max: 40,
+            roll_count: 3,
+        },
+        LootTable {
+            id: "tomb_sanctum".to_string(),
+            flavor_text: "You stand before the Valley King's golden sarcophagus. \
+                          The treasures of a lost kingdom surround you — tarnished gold, \
+                          weapons of another age, and relics of immense power. \
+                          This is the greatest hoard in all of Embervale.".to_string(),
+            guaranteed_items: vec![
+                ("ancient_coin".to_string(), 8),
+                ("ghost_essence".to_string(), 2),
+                ("ancient_tome".to_string(), 1),
+            ],
+            random_entries: vec![
+                LootEntry { item_id: "valley_king_crown".to_string(), weight: 60, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "ancient_amulet".to_string(), weight: 50, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "tomb_seal_ring".to_string(), weight: 40, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "health_potion".to_string(), weight: 60, quantity_min: 2, quantity_max: 3 },
+                LootEntry { item_id: "runic_short_sword".to_string(), weight: 30, quantity_min: 1, quantity_max: 1 },
+            ],
+            gold_min: 50, gold_max: 100,
+            roll_count: 4,
+        },
+    ]
 }
 
 /// Build a starter inventory set for a new player.
