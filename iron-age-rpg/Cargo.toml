@@ -1,0 +1,20 @@
+[workspace]
+members = [
+    "crates/core",
+    "crates/combat",
+    "crates/inventory",
+    "crates/character",
+    "crates/world",
+    "crates/narrative",
+    "crates/crafting",
+    "crates/data",
+    "crates/game",
+]
+resolver = "2"
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+rand = "0.8"
+thiserror = "1"

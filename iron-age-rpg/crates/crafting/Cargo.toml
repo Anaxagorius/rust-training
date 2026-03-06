@@ -1,0 +1,11 @@
+[package]
+name = "iron-age-crafting"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+iron-age-core = { path = "../core" }
+iron-age-character = { path = "../character" }
+iron-age-inventory = { path = "../inventory" }
+serde = { workspace = true }
+rand = { workspace = true }
