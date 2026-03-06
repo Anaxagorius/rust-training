@@ -648,23 +648,23 @@ fn search_location(state: &mut GameState) -> String {
 
     let mut out = format!("{}\n", flavor);
 
+    let mut found_any = gold > 0;
     if gold > 0 {
         state.gold += gold;
         out.push_str(&format!("  Found: {} gold\n", gold));
     }
 
-    let mut found_any_items = false;
     for (item_id, qty) in &items {
         if state.give_item(item_id, *qty) {
             let name = iron_age_data::find_item(item_id)
                 .map(|i| i.name)
                 .unwrap_or_else(|| item_id.replace('_', " "));
             out.push_str(&format!("  Found: {} x{}\n", name, qty));
-            found_any_items = true;
+            found_any = true;
         }
     }
 
-    if gold == 0 && !found_any_items {
+    if !found_any {
         out.push_str("  Nothing useful found.\n");
     }
 

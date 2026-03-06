@@ -725,27 +725,24 @@ pub fn all_items() -> Vec<Item> {
         Item::new_weapon("runic_short_sword", "Runic Short Sword", ItemType::ShortSword, MaterialTier::Iron, ItemRarity::Rare, 13),
 
         // Unique accessories — rings and amulets with stat bonuses
-        {
-            let item = Item {
-                id: "crystal_ring".to_string(),
-                name: "Crystal Ring".to_string(),
-                item_type: ItemType::Ring,
-                material: None,
-                rarity: ItemRarity::Rare,
-                weight: 0.1,
-                value: 120,
-                damage_base: 0,
-                armor_base: 0,
-                stat_requirements: Stats::zeroed(),
-                stat_bonuses: Stats::new(0, 2, 1, 0, 0, 0),
-                equip_slot: Some(EquipSlot::Ring1),
-                stack_size: 1,
-                quantity: 1,
-                description: "A ring carved from a crystal shard, imbued with magical resonance. +2 INT, +1 WIS.".to_string(),
-                effects: Vec::new(),
-                is_two_handed: false,
-            };
-            item
+        Item {
+            id: "crystal_ring".to_string(),
+            name: "Crystal Ring".to_string(),
+            item_type: ItemType::Ring,
+            material: None,
+            rarity: ItemRarity::Rare,
+            weight: 0.1,
+            value: 120,
+            damage_base: 0,
+            armor_base: 0,
+            stat_requirements: Stats::zeroed(),
+            stat_bonuses: Stats::new(0, 2, 1, 0, 0, 0),
+            equip_slot: Some(EquipSlot::Ring1),
+            stack_size: 1,
+            quantity: 1,
+            description: "A ring carved from a crystal shard, imbued with magical resonance. +2 INT, +1 WIS.".to_string(),
+            effects: Vec::new(),
+            is_two_handed: false,
         },
         {
             Item {
@@ -768,49 +765,45 @@ pub fn all_items() -> Vec<Item> {
                 is_two_handed: false,
             }
         },
-        {
-            Item {
-                id: "tomb_seal_ring".to_string(),
-                name: "Tomb Seal Ring".to_string(),
-                item_type: ItemType::Ring,
-                material: None,
-                rarity: ItemRarity::Uncommon,
-                weight: 0.1,
-                value: 80,
-                damage_base: 0,
-                armor_base: 0,
-                stat_requirements: Stats::zeroed(),
-                stat_bonuses: Stats::new(0, 0, 2, 0, 0, 2),
-                equip_slot: Some(EquipSlot::Ring1),
-                stack_size: 1,
-                quantity: 1,
-                description: "The seal ring of a Valley King's official. +2 WIS, +2 CHA.".to_string(),
-                effects: Vec::new(),
-                is_two_handed: false,
-            }
+        Item {
+            id: "tomb_seal_ring".to_string(),
+            name: "Tomb Seal Ring".to_string(),
+            item_type: ItemType::Ring,
+            material: None,
+            rarity: ItemRarity::Uncommon,
+            weight: 0.1,
+            value: 80,
+            damage_base: 0,
+            armor_base: 0,
+            stat_requirements: Stats::zeroed(),
+            stat_bonuses: Stats::new(0, 0, 2, 0, 0, 2),
+            equip_slot: Some(EquipSlot::Ring1),
+            stack_size: 1,
+            quantity: 1,
+            description: "The seal ring of a Valley King's official. +2 WIS, +2 CHA.".to_string(),
+            effects: Vec::new(),
+            is_two_handed: false,
         },
-        {
-            Item {
-                id: "valley_king_crown".to_string(),
-                name: "Valley King's Crown".to_string(),
-                item_type: ItemType::ArmorPiece(EquipSlot::Helmet),
-                material: Some(MaterialTier::Iron),
-                rarity: ItemRarity::Legendary,
-                weight: 1.0,
-                value: 500,
-                damage_base: 0,
-                armor_base: 8,
-                stat_requirements: Stats::zeroed(),
-                stat_bonuses: Stats::new(3, 0, 0, 3, 0, 3),
-                equip_slot: Some(EquipSlot::Helmet),
-                stack_size: 1,
-                quantity: 1,
-                description: "The legendary crown of Embervale's ancient Valley King. \
-                              Its tarnished gold still carries immense authority. \
-                              +3 STR, +3 CON, +3 CHA.".to_string(),
-                effects: Vec::new(),
-                is_two_handed: false,
-            }
+        Item {
+            id: "valley_king_crown".to_string(),
+            name: "Valley King's Crown".to_string(),
+            item_type: ItemType::ArmorPiece(EquipSlot::Helmet),
+            material: Some(MaterialTier::Iron),
+            rarity: ItemRarity::Legendary,
+            weight: 1.0,
+            value: 500,
+            damage_base: 0,
+            armor_base: 8,
+            stat_requirements: Stats::zeroed(),
+            stat_bonuses: Stats::new(3, 0, 0, 3, 0, 3),
+            equip_slot: Some(EquipSlot::Helmet),
+            stack_size: 1,
+            quantity: 1,
+            description: "The legendary crown of Embervale's ancient Valley King. \
+                          Its tarnished gold still carries immense authority. \
+                          +3 STR, +3 CON, +3 CHA.".to_string(),
+            effects: Vec::new(),
+            is_two_handed: false,
         },
     ]
 }
@@ -836,7 +829,7 @@ pub struct LootEntry {
 #[derive(Debug, Clone)]
 pub struct LootTable {
     pub id: String,
-    /// Flavour text shown when the player searches this location.
+    /// Flavor text shown when the player searches this location.
     pub flavor_text: String,
     /// Items that are always present when the location is searched.
     pub guaranteed_items: Vec<(String, u32)>,
