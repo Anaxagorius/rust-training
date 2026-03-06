@@ -259,6 +259,252 @@ pub fn all_enemy_templates() -> Vec<EnemyTemplate> {
             abilities: vec!["Cleave".to_string(), "Battle Roar".to_string(), "Iron Skin".to_string()],
             on_death_status: None,
         },
+
+        // ── Valley & Cave Enemies ─────────────────────────────────────────────
+        EnemyTemplate {
+            id: "valley_wolf".to_string(),
+            name: "Valley Wolf".to_string(),
+            level: 1,
+            base_hp: 28,
+            stats: Stats::new(5, 2, 2, 4, 7, 1),
+            armor: 0,
+            weapon_damage: 6,
+            damage_type: DamageType::Physical,
+            resistances: ElementalResistances::none(),
+            xp_reward: 22,
+            gold_min: 0, gold_max: 1,
+            loot_item_ids: vec!["wolf_pelt".to_string()],
+            description: "A grey wolf that roams the Embervale valley floor.".to_string(),
+            abilities: vec!["Bite".to_string()],
+            on_death_status: None,
+        },
+        EnemyTemplate {
+            id: "giant_bat".to_string(),
+            name: "Giant Bat".to_string(),
+            level: 2,
+            base_hp: 22,
+            stats: Stats::new(3, 2, 2, 3, 10, 1),
+            armor: 0,
+            weapon_damage: 5,
+            damage_type: DamageType::Physical,
+            resistances: ElementalResistances::none(),
+            xp_reward: 20,
+            gold_min: 0, gold_max: 0,
+            loot_item_ids: vec![],
+            description: "A large cave bat with leathery wings and a piercing shriek.".to_string(),
+            abilities: vec!["Screech".to_string()],
+            on_death_status: None,
+        },
+        EnemyTemplate {
+            id: "cave_bear".to_string(),
+            name: "Cave Bear".to_string(),
+            level: 4,
+            base_hp: 90,
+            stats: Stats::new(13, 2, 3, 12, 5, 1),
+            armor: 3,
+            weapon_damage: 16,
+            damage_type: DamageType::Physical,
+            resistances: ElementalResistances::none(),
+            xp_reward: 110,
+            gold_min: 0, gold_max: 3,
+            loot_item_ids: vec!["bear_claw".to_string()],
+            description: "A massive brown bear that makes its den deep in the crystal cave.".to_string(),
+            abilities: vec!["Maul".to_string(), "Roar".to_string()],
+            on_death_status: None,
+        },
+        EnemyTemplate {
+            id: "bandit".to_string(),
+            name: "Valley Bandit".to_string(),
+            level: 2,
+            base_hp: 38,
+            stats: Stats::new(6, 4, 3, 5, 6, 4),
+            armor: 2,
+            weapon_damage: 8,
+            damage_type: DamageType::Physical,
+            resistances: ElementalResistances::none(),
+            xp_reward: 35,
+            gold_min: 3, gold_max: 12,
+            loot_item_ids: vec!["crude_knife".to_string(), "tattered_cloth".to_string()],
+            description: "A desperate outlaw preying on travellers in the valley.".to_string(),
+            abilities: vec!["Ambush".to_string()],
+            on_death_status: None,
+        },
+        EnemyTemplate {
+            id: "bandit_chief".to_string(),
+            name: "Bandit Chief".to_string(),
+            level: 4,
+            base_hp: 72,
+            stats: Stats::new(10, 6, 5, 8, 7, 6),
+            armor: 5,
+            weapon_damage: 13,
+            damage_type: DamageType::Physical,
+            resistances: ElementalResistances::none(),
+            xp_reward: 120,
+            gold_min: 15, gold_max: 35,
+            loot_item_ids: vec!["iron_short_sword".to_string(), "bandit_cloak".to_string()],
+            description: "The leader of the valley bandits — scarred, cruel, and well-armed.".to_string(),
+            abilities: vec!["Rally".to_string(), "Power Strike".to_string()],
+            on_death_status: None,
+        },
+        EnemyTemplate {
+            id: "mountain_goat".to_string(),
+            name: "Mountain Goat".to_string(),
+            level: 1,
+            base_hp: 20,
+            stats: Stats::new(4, 1, 1, 4, 7, 1),
+            armor: 0,
+            weapon_damage: 4,
+            damage_type: DamageType::Physical,
+            resistances: ElementalResistances::none(),
+            xp_reward: 10,
+            gold_min: 0, gold_max: 0,
+            loot_item_ids: vec!["meat".to_string()],
+            description: "A sure-footed goat that has strayed from the mountain crags.".to_string(),
+            abilities: vec![],
+            on_death_status: None,
+        },
+        EnemyTemplate {
+            id: "stone_troll".to_string(),
+            name: "Stone Troll".to_string(),
+            level: 5,
+            base_hp: 110,
+            stats: Stats::new(16, 2, 2, 14, 4, 1),
+            armor: 6,
+            weapon_damage: 18,
+            damage_type: DamageType::Physical,
+            resistances: {
+                let mut r = ElementalResistances::none();
+                r.physical = 15;
+                r.fire = -20;
+                r
+            },
+            xp_reward: 180,
+            gold_min: 0, gold_max: 8,
+            loot_item_ids: vec!["iron_ingot".to_string(), "crystal_shard".to_string()],
+            description: "A hulking troll of grey stone-like skin that guards the mountain passes.".to_string(),
+            abilities: vec!["Boulder Smash".to_string(), "Regenerate".to_string()],
+            on_death_status: None,
+        },
+
+        // ── Undead (Crypts & Tombs) ───────────────────────────────────────────
+        EnemyTemplate {
+            id: "skeleton_warrior".to_string(),
+            name: "Skeleton Warrior".to_string(),
+            level: 3,
+            base_hp: 45,
+            stats: Stats::new(7, 2, 1, 6, 5, 1),
+            armor: 4,
+            weapon_damage: 9,
+            damage_type: DamageType::Physical,
+            resistances: {
+                let mut r = ElementalResistances::none();
+                r.poison = 100;
+                r.physical = 10;
+                r.fire = -15;
+                r
+            },
+            xp_reward: 50,
+            gold_min: 0, gold_max: 5,
+            loot_item_ids: vec!["bones".to_string(), "ancient_coin".to_string()],
+            description: "An animated skeleton clad in corroded armour, obeying some \
+                          long-dead will.".to_string(),
+            abilities: vec!["Bone Rattle".to_string()],
+            on_death_status: None,
+        },
+        EnemyTemplate {
+            id: "skeleton_archer".to_string(),
+            name: "Skeleton Archer".to_string(),
+            level: 3,
+            base_hp: 35,
+            stats: Stats::new(4, 3, 2, 4, 8, 1),
+            armor: 2,
+            weapon_damage: 8,
+            damage_type: DamageType::Physical,
+            resistances: {
+                let mut r = ElementalResistances::none();
+                r.poison = 100;
+                r.fire = -15;
+                r
+            },
+            xp_reward: 45,
+            gold_min: 0, gold_max: 3,
+            loot_item_ids: vec!["bones".to_string(), "crude_bow".to_string()],
+            description: "A skeleton that draws a crumbling bow with uncanny precision.".to_string(),
+            abilities: vec!["Volley".to_string()],
+            on_death_status: None,
+        },
+        EnemyTemplate {
+            id: "crypt_ghoul".to_string(),
+            name: "Crypt Ghoul".to_string(),
+            level: 4,
+            base_hp: 58,
+            stats: Stats::new(9, 3, 2, 7, 8, 1),
+            armor: 1,
+            weapon_damage: 12,
+            damage_type: DamageType::Poison,
+            resistances: {
+                let mut r = ElementalResistances::none();
+                r.poison = 50;
+                r.nature = 20;
+                r
+            },
+            xp_reward: 80,
+            gold_min: 0, gold_max: 4,
+            loot_item_ids: vec!["tattered_cloth".to_string(), "ancient_coin".to_string()],
+            description: "A hunched, ravening undead creature that feeds on the buried dead \
+                          of the valley's ancient cemeteries.".to_string(),
+            abilities: vec!["Paralyzing Bite".to_string(), "Frenzy".to_string()],
+            on_death_status: Some(StatusEffect::Poison { damage_per_turn: 3, turns_remaining: 3 }),
+        },
+        EnemyTemplate {
+            id: "wraith".to_string(),
+            name: "Barrow Wraith".to_string(),
+            level: 6,
+            base_hp: 75,
+            stats: Stats::new(6, 14, 12, 6, 9, 4),
+            armor: 0,
+            weapon_damage: 16,
+            damage_type: DamageType::Psychic,
+            resistances: {
+                let mut r = ElementalResistances::none();
+                r.poison = 100;
+                r.physical = 50;
+                r.fire = 25;
+                r
+            },
+            xp_reward: 220,
+            gold_min: 0, gold_max: 0,
+            loot_item_ids: vec!["ghost_essence".to_string(), "ancient_coin".to_string()],
+            description: "The tortured spirit of a slain warrior, bound to the barrow \
+                          by ancient ritual. It drains life with a touch.".to_string(),
+            abilities: vec!["Life Drain".to_string(), "Wail".to_string(), "Ethereal Form".to_string()],
+            on_death_status: None,
+        },
+        EnemyTemplate {
+            id: "tomb_guardian".to_string(),
+            name: "Tomb Guardian".to_string(),
+            level: 7,
+            base_hp: 150,
+            stats: Stats::new(14, 8, 6, 16, 6, 3),
+            armor: 10,
+            weapon_damage: 20,
+            damage_type: DamageType::Physical,
+            resistances: {
+                let mut r = ElementalResistances::none();
+                r.poison = 100;
+                r.physical = 20;
+                r.nature = 30;
+                r
+            },
+            xp_reward: 450,
+            gold_min: 20, gold_max: 50,
+            loot_item_ids: vec!["ancient_coin".to_string(), "ghost_essence".to_string(), "iron_long_sword".to_string()],
+            description: "A massive stone guardian animated by the Valley King's burial \
+                          rites. Its eyes blaze with eldritch fire and its form is \
+                          nearly impervious to mundane weapons.".to_string(),
+            abilities: vec!["Stone Fist".to_string(), "Ancient Ward".to_string(), "Tremor Strike".to_string()],
+            on_death_status: None,
+        },
     ]
 }
 
@@ -353,6 +599,15 @@ pub fn all_items() -> Vec<Item> {
 
         // Quest items
         Item::new_consumable("iron_key", "Iron Key", ItemType::CraftingMaterial, 1),
+
+        // Valley / cave / tomb materials and loot
+        Item::new_consumable("bear_claw", "Bear Claw", ItemType::CraftingMaterial, 5),
+        Item::new_consumable("crystal_shard", "Crystal Shard", ItemType::CraftingMaterial, 5),
+        Item::new_consumable("bones", "Bones", ItemType::CraftingMaterial, 10),
+        Item::new_consumable("ancient_coin", "Ancient Coin", ItemType::CraftingMaterial, 1),
+        Item::new_consumable("ghost_essence", "Ghost Essence", ItemType::CraftingMaterial, 1),
+        Item::new_consumable("tattered_cloth", "Tattered Cloth", ItemType::CraftingMaterial, 10),
+        Item::new_armor("bandit_cloak", "Bandit's Cloak", EquipSlot::Cape, MaterialTier::Wood, ItemRarity::Common, 3),
     ]
 }
 
