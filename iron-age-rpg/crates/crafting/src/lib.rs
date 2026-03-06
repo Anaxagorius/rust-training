@@ -5,8 +5,39 @@ use rand::Rng;
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum CraftingProfession { Mining, Gathering, Cooking, Weaponsmithing, Armorsmithing, Alchemy, BoyerFletcher }
 
+impl CraftingProfession {
+    pub fn name(&self) -> &'static str {
+        match self {
+            Self::Mining => "Mining",
+            Self::Gathering => "Gathering",
+            Self::Cooking => "Cooking",
+            Self::Weaponsmithing => "Weaponsmithing",
+            Self::Armorsmithing => "Armorsmithing",
+            Self::Alchemy => "Alchemy",
+            Self::BoyerFletcher => "BoyerFletcher",
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum CraftingStation { Forge, Anvil, TanningRack, Loom, Campfire, AlchemyStone, FletchingBench, None }
+
+impl CraftingStation {
+    /// Returns the station name to match against `Location::has_crafting_station`,
+    /// or `None` if no station is required.
+    pub fn name(&self) -> Option<&'static str> {
+        match self {
+            Self::Forge => Some("Forge"),
+            Self::Anvil => Some("Anvil"),
+            Self::TanningRack => Some("TanningRack"),
+            Self::Loom => Some("Loom"),
+            Self::Campfire => Some("Campfire"),
+            Self::AlchemyStone => Some("AlchemyStone"),
+            Self::FletchingBench => Some("FletchingBench"),
+            Self::None => None,
+        }
+    }
+}
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct RecipeIngredient { pub item_id: String, pub quantity: u32 }
@@ -210,5 +241,67 @@ mod tests {
         let high = CraftingSystem::calculate_quality(50, 50, 100, &mut rng2);
         // High stats produce at least as good quality as the same roll
         let _ = (low, high); // just ensure it compiles and runs
+    }
+
+    #[test]
+    fn test_profession_name_roundtrip() {
+        let professions = [
+            (CraftingProfession::Mining, "Mining"),
+            (CraftingProfession::Gathering, "Gathering"),
+            (CraftingProfession::Cooking, "Cooking"),
+            (CraftingProfession::Weaponsmithing, "Weaponsmithing"),
+            (CraftingProfession::Armorsmithing, "Armorsmithing"),
+            (CraftingProfession::Alchemy, "Alchemy"),
+            (CraftingProfession::BoyerFletcher, "BoyerFletcher"),
+        ];
+        for (prof, expected) in &professions {
+            assert_eq!(prof.name(), *expected);
+        }
+    }
+
+    #[test]
+    fn test_station_name_some_and_none() {
+        assert_eq!(CraftingStation::None.name(), None);
+        assert_eq!(CraftingStation::Forge.name(), Some("Forge"));
+        assert_eq!(CraftingStation::Campfire.name(), Some("Campfire"));
+        assert_eq!(CraftingStation::AlchemyStone.name(), Some("AlchemyStone"));
+    }
+
+    #[test]
+    fn test_learn_recipe_and_craft_with_correct_skill() {
+        use iron_age_inventory::{Item, ItemType};
+        let mut rng = rand::rngs::StdRng::seed_from_u64(42);
+        let mut cs = CraftingSystem::new();
+        assert!(cs.learn_recipe("health_potion"));
+
+        let mut inv = Inventory::new(40);
+        // Add required ingredients: 2 herbs + 1 clean_water
+        let mut herbs = Item::new_consumable("herbs", "Herbs", ItemType::CraftingMaterial, 10);
+        herbs.quantity = 2;
+        let water = Item::new_consumable("clean_water", "Clean Water", ItemType::CraftingMaterial, 5);
+        inv.add_item(herbs).unwrap();
+        inv.add_item(water).unwrap();
+
+        // health_potion requires skill 0 and INT 2
+        let result = cs.craft("health_potion", &mut inv, 0, 5, 5, &mut rng);
+        assert!(result.is_ok(), "Expected Ok, got {:?}", result.err());
+    }
+
+    #[test]
+    fn test_craft_fails_when_skill_too_low() {
+        use iron_age_inventory::{Item, ItemType};
+        let mut rng = rand::rngs::StdRng::seed_from_u64(1);
+        let mut cs = CraftingSystem::with_starter_recipes();
+        let mut inv = Inventory::new(40);
+
+        // iron_short_sword requires skill level 1; pass level 0 → should fail
+        let mut ingot = Item::new_consumable("iron_ingot", "Iron Ingot", ItemType::CraftingMaterial, 10);
+        ingot.quantity = 3;
+        let wrap = Item::new_consumable("leather_wrap", "Leather Wrap", ItemType::CraftingMaterial, 10);
+        inv.add_item(ingot).unwrap();
+        inv.add_item(wrap).unwrap();
+
+        let result = cs.craft("iron_short_sword", &mut inv, 0, 10, 10, &mut rng);
+        assert!(result.is_err());
     }
 }

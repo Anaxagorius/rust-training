@@ -57,12 +57,36 @@ pub fn location_display(loc: &Location) -> String {
 }
 
 pub fn character_sheet(c: &Character, gold: u32) -> String {
+    use iron_age_character::Skill;
+    let crafting_skills: Vec<(&str, &Skill)> = vec![
+        ("Weaponsmithing", &Skill::Weaponsmithing),
+        ("Armorsmithing",  &Skill::Armorsmithing),
+        ("Alchemy",        &Skill::Alchemy),
+        ("Cooking",        &Skill::Cooking),
+        ("Mining",         &Skill::Mining),
+        ("Gathering",      &Skill::Gathering),
+        ("BoyerFletcher",  &Skill::BoyerFletcher),
+    ];
+    let craft_str: String = crafting_skills.iter()
+        .filter_map(|(label, skill)| {
+            c.skills.get(skill).filter(|sl| sl.level > 0 || sl.experience > 0)
+                .map(|sl| format!("{}: {}", label, sl.level))
+        })
+        .collect::<Vec<_>>()
+        .join(", ");
+    let craft_display = if craft_str.is_empty() {
+        "None".to_string()
+    } else {
+        craft_str
+    };
+
     format!(
         "── {} (Level {}) ──\n\
          HP: {}/{} | Stamina: {}/{} | Mana: {}/{}\n\
          Gold: {} | XP to next: {}\n\
          STR:{} INT:{} WIS:{} CON:{} DEX:{} CHA:{}\n\
          Stat points: {} | Skill points: {}\n\
+         Crafting skills: {}\n\
          Perks: {}",
         c.name, c.level,
         c.hp, c.max_hp,
@@ -73,6 +97,7 @@ pub fn character_sheet(c: &Character, gold: u32) -> String {
         c.stats.strength, c.stats.intelligence, c.stats.wisdom,
         c.stats.constitution, c.stats.dexterity, c.stats.charisma,
         c.stat_points, c.skill_points,
+        craft_display,
         if c.perks.is_empty() {
             "None".to_string()
         } else {
@@ -168,8 +193,9 @@ pub fn help_text() -> &'static str {
   quests / q               — Show your quest log
   rest                     — Rest at a safe location
   use <item>               — Use a consumable item
-  craft list               — List known crafting recipes
-  craft <recipe_id>        — Craft an item
+  craft list               — List known crafting recipes (with station & skill info)
+  craft <recipe_id>        — Craft an item (must be at the required station)
+  learn <recipe_id>        — Learn a new crafting recipe
   accept <quest_id>        — Accept a quest from an NPC
   complete <quest_id>      — Turn in a completed quest
   save                     — Save your progress to savegame.json

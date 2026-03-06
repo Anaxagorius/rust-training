@@ -214,6 +214,34 @@ impl Character {
     pub fn max_hp_base(con: i32) -> i32 { 50 + con * 10 }
     pub fn max_stamina_base(con: i32, str: i32) -> i32 { 30 + (con + str) * 3 }
     pub fn max_mana_base(int: i32, wis: i32) -> i32 { 20 + (int + wis) * 5 }
+
+    /// Return the current level for a named crafting skill (0 if untrained).
+    pub fn get_craft_skill(&self, skill_name: &str) -> u32 {
+        let skill = Self::crafting_skill_from_name(skill_name);
+        skill.and_then(|s| self.skills.get(&s)).map_or(0, |sl| sl.level)
+    }
+
+    /// Add XP to a named crafting skill. Returns `true` if the skill levelled up.
+    pub fn gain_craft_xp(&mut self, skill_name: &str, xp: u64) -> bool {
+        if let Some(skill) = Self::crafting_skill_from_name(skill_name) {
+            self.skills.entry(skill).or_insert_with(SkillLevel::new).add_experience(xp)
+        } else {
+            false
+        }
+    }
+
+    fn crafting_skill_from_name(name: &str) -> Option<Skill> {
+        match name {
+            "Weaponsmithing" => Some(Skill::Weaponsmithing),
+            "Armorsmithing"  => Some(Skill::Armorsmithing),
+            "Alchemy"        => Some(Skill::Alchemy),
+            "Cooking"        => Some(Skill::Cooking),
+            "Mining"         => Some(Skill::Mining),
+            "Gathering"      => Some(Skill::Gathering),
+            "BoyerFletcher"  => Some(Skill::BoyerFletcher),
+            _ => None,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -270,5 +298,29 @@ mod tests {
             assert!(Character::xp_for_level(i + 1) > Character::xp_for_level(i),
                 "level {} -> {} failed", i, i+1);
         }
+    }
+
+    #[test]
+    fn test_get_craft_skill_returns_zero_for_untrained() {
+        let c = Character::new("Test".to_string());
+        assert_eq!(c.get_craft_skill("Weaponsmithing"), 0);
+        assert_eq!(c.get_craft_skill("Alchemy"), 0);
+        assert_eq!(c.get_craft_skill("UnknownSkill"), 0);
+    }
+
+    #[test]
+    fn test_gain_craft_xp_levels_up_skill() {
+        let mut c = Character::new("Test".to_string());
+        assert_eq!(c.get_craft_skill("Alchemy"), 0);
+        // First level requires 100 XP
+        let levelled = c.gain_craft_xp("Alchemy", 100);
+        assert!(levelled, "Should have levelled up after 100 XP");
+        assert_eq!(c.get_craft_skill("Alchemy"), 1);
+    }
+
+    #[test]
+    fn test_gain_craft_xp_unknown_skill_returns_false() {
+        let mut c = Character::new("Test".to_string());
+        assert!(!c.gain_craft_xp("Teleportation", 9999));
     }
 }
