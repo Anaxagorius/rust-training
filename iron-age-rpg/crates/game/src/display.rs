@@ -181,6 +181,7 @@ pub fn help_text() -> &'static str {
 ── Commands ──
   look / l                 — Describe your current location
   go <direction>           — Move in a direction (north, south, east, west)
+  search / examine / loot  — Search the current location for treasure and items
   talk <npc>               — Talk to an NPC
   attack                   — Attack a hostile creature
   flee                     — Attempt to flee from combat
