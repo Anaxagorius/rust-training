@@ -1,7 +1,7 @@
 use crate::game_state::GameState;
 use crate::display;
 use iron_age_combat::{Battle, BattleAction, BattleState};
-use iron_age_data::{find_template, roll_loot};
+use iron_age_data::{find_template, find_item, roll_loot};
 use rand::{Rng, SeedableRng};
 
 pub enum CommandResult {
@@ -189,6 +189,9 @@ pub fn handle_command(input: &str, state: &mut GameState) -> CommandResult {
         "craft" => {
             if arg == "list" || arg.is_empty() {
                 let mut out = "── Known Recipes ──\n".to_string();
+                if state.crafting.known_recipes.is_empty() {
+                    out.push_str("  (none — use 'learn <recipe_id>' to learn recipes)\n");
+                }
                 for recipe in &state.crafting.known_recipes {
                     out.push_str(&format!(
                         "  [{}] {} — {}\n",
@@ -198,23 +201,111 @@ pub fn handle_command(input: &str, state: &mut GameState) -> CommandResult {
                         .map(|i| format!("{} x{}", i.item_id, i.quantity))
                         .collect();
                     out.push_str(&format!("    Ingredients: {}\n", ings.join(", ")));
+                    let station_str = recipe.station.name()
+                        .map_or("None".to_string(), |s| s.to_string());
+                    out.push_str(&format!(
+                        "    Station: {} | Skill: {} (req. level {})\n",
+                        station_str, recipe.profession.name(), recipe.required_skill_level
+                    ));
                 }
                 out
             } else {
-                let mut rng = rand::rngs::StdRng::seed_from_u64(state.turn as u64 * 7 + 13);
-                let int = state.player.character.stats.intelligence;
-                let wis = state.player.character.stats.wisdom;
-                match state.crafting.craft(arg, &mut state.inventory, 0, int, wis, &mut rng) {
-                    Ok((item, quality)) => {
-                        let name = item.name.clone();
-                        let q_label = format!("{:?}", quality);
-                        let added = state.inventory.add_item(item);
-                        match added {
-                            Ok(_) => format!("Crafted {} ({}).", name, q_label),
-                            Err(_) => "Inventory full — couldn't store the crafted item.".to_string(),
+                // Look up the recipe in known recipes
+                let recipe = state.crafting.known_recipes.iter().find(|r| r.id == arg).cloned();
+                match recipe {
+                    None => format!(
+                        "Unknown recipe '{}'. Type 'craft list' to see your known recipes.",
+                        arg
+                    ),
+                    Some(recipe) => {
+                        // Check crafting station requirement
+                        if let Some(required_station) = recipe.station.name() {
+                            let current_station = state.world.current_location()
+                                .and_then(|l| l.has_crafting_station.as_deref());
+                            let has_station = current_station
+                                .map_or(false, |s| s.eq_ignore_ascii_case(required_station));
+                            if !has_station {
+                                return CommandResult::Message(format!(
+                                    "You need a {} to craft this. Look for one in the right location.",
+                                    required_station
+                                ));
+                            }
+                        }
+
+                        // Use the character's actual skill level for this profession
+                        let skill_name = recipe.profession.name();
+                        let skill_level = state.player.character.get_craft_skill(skill_name);
+
+                        let mut rng = rand::rngs::StdRng::seed_from_u64(
+                            state.turn as u64 * 7 + 13
+                        );
+                        let int = state.player.character.stats.intelligence;
+                        let wis = state.player.character.stats.wisdom;
+
+                        match state.crafting.craft(
+                            &recipe.id, &mut state.inventory,
+                            skill_level, int, wis, &mut rng,
+                        ) {
+                            Ok((stub_item, quality)) => {
+                                // Prefer the full catalog item; fall back to the stub
+                                let mut item = find_item(&recipe.output_item_id)
+                                    .unwrap_or(stub_item);
+                                item.quantity = recipe.output_quantity;
+
+                                // Apply quality bonus to damage/armor
+                                let q_bonus = quality.stat_bonus();
+                                item.damage_base = (item.damage_base + q_bonus).max(0);
+                                item.armor_base = (item.armor_base + q_bonus).max(0);
+
+                                let name = item.name.clone();
+                                let q_label = format!("{:?}", quality);
+
+                                // Gain crafting skill XP (25 base + 10 per required level)
+                                let xp_gain = 25u64 + recipe.required_skill_level as u64 * 10;
+                                let levelled_up = state.player.character
+                                    .gain_craft_xp(skill_name, xp_gain);
+
+                                match state.inventory.add_item(item) {
+                                    Ok(_) => {
+                                        let mut out =
+                                            format!("Crafted {} ({}).", name, q_label);
+                                        if levelled_up {
+                                            let new_lvl = state.player.character
+                                                .get_craft_skill(skill_name);
+                                            out.push_str(&format!(
+                                                "\n  📈 {} skill increased to level {}!",
+                                                skill_name, new_lvl
+                                            ));
+                                        }
+                                        out
+                                    }
+                                    Err(_) => "Inventory full — couldn't store the crafted item."
+                                        .to_string(),
+                                }
+                            }
+                            Err(e) => format!("{}", e),
                         }
                     }
-                    Err(e) => format!("{}", e),
+                }
+            }
+        }
+
+        "learn" => {
+            if arg.is_empty() {
+                "Learn which recipe? e.g. 'learn iron_long_sword'. \
+                 Use 'craft list' to see already known recipes."
+                    .to_string()
+            } else {
+                if state.crafting.known_recipes.iter().any(|r| r.id == arg) {
+                    format!("You already know how to craft '{}'.", arg)
+                } else if state.crafting.learn_recipe(arg) {
+                    format!("You have learned the recipe for '{}'.", arg)
+                } else {
+                    format!(
+                        "No recipe named '{}' exists. \
+                         Check the recipe id carefully.",
+                        arg
+                    )
                 }
             }
         }

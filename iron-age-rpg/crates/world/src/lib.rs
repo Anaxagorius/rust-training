@@ -226,18 +226,6 @@ pub fn build_starting_world() -> WorldMap {
 
     map.add_location(
         Location::new(
-            "thornvale_market",
-            "Thornvale Market",
-            "Rows of stalls sell grain, cloth, and oddities. A travelling merchant \
-             eyes you with interest. Supplies can be purchased here.",
-            RegionType::Village,
-        )
-        .with_exit(Exit::new("north", "thornvale_square", "Back to the village square."))
-        .with_npc("merchant_serah"),
-    );
-
-    map.add_location(
-        Location::new(
             "thornvale_inn",
             "The Rusted Helm Inn",
             "Low beams, a roaring fire, and the smell of ale. A bard strums \
@@ -245,7 +233,21 @@ pub fn build_starting_world() -> WorldMap {
             RegionType::Village,
         )
         .with_exit(Exit::new("east", "thornvale_square", "Back to the village square."))
-        .with_npc("innkeeper_marta"),
+        .with_npc("innkeeper_marta")
+        .with_crafting_station("Campfire"),
+    );
+
+    map.add_location(
+        Location::new(
+            "thornvale_market",
+            "Thornvale Market",
+            "Rows of stalls sell grain, cloth, and oddities. A travelling merchant \
+             eyes you with interest. Supplies can be purchased here.",
+            RegionType::Village,
+        )
+        .with_exit(Exit::new("north", "thornvale_square", "Back to the village square."))
+        .with_npc("merchant_serah")
+        .with_crafting_station("TanningRack"),
     );
 
     // --- King's Road ---
@@ -321,7 +323,8 @@ pub fn build_starting_world() -> WorldMap {
         .with_exit(Exit::new("north", "ashwood_depths", "Deeper into the dark forest."))
         .with_exit(Exit::new("east", "bog_trail", "A muddy trail leads to the bog."))
         .with_enemy_spawn("wolf")
-        .with_enemy_spawn("goblin_warrior"),
+        .with_enemy_spawn("goblin_warrior")
+        .with_crafting_station("FletchingBench"),
     );
 
     map.add_location(
@@ -394,7 +397,8 @@ pub fn build_starting_world() -> WorldMap {
         )
         .with_exit(Exit::new("west", "bog_trail", "Back along the bog trail."))
         .with_enemy_spawn("bog_crawler")
-        .with_enemy_spawn("swamp_witch"),
+        .with_enemy_spawn("swamp_witch")
+        .with_crafting_station("AlchemyStone"),
     );
 
     // --- Ironmere Keep ---
