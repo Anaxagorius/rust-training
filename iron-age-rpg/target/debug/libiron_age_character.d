@@ -1,0 +1,1 @@
+/home/runner/work/rust-training/rust-training/iron-age-rpg/target/debug/libiron_age_character.rlib: /home/runner/work/rust-training/rust-training/iron-age-rpg/crates/character/src/lib.rs /home/runner/work/rust-training/rust-training/iron-age-rpg/crates/core/src/lib.rs
