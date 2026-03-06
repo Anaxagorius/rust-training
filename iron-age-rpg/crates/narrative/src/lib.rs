@@ -451,6 +451,9 @@ pub fn build_narrative() -> (NpcRegistry, QuestLog) {
             "blacksmith_grund",
             "The forge is yours to use. Just don't melt anything expensive."
         ))
+        .with_shop_item("iron_ingot")
+        .with_shop_item("leather")
+        .with_shop_item("wood_shaft")
         .with_quest("gather_iron"),
     );
 
@@ -460,9 +463,13 @@ pub fn build_narrative() -> (NpcRegistry, QuestLog) {
             "Fresh supplies, fair prices! What can I get for you?",
         )
         .with_shop_item("health_potion")
+        .with_shop_item("stamina_potion")
         .with_shop_item("antidote")
+        .with_shop_item("clarity_potion")
         .with_shop_item("iron_ingot")
-        .with_shop_item("leather"),
+        .with_shop_item("leather")
+        .with_shop_item("herbs")
+        .with_shop_item("clean_water"),
     );
 
     npcs.register(
@@ -657,5 +664,23 @@ mod tests {
         assert!(result.is_err());
         let result2 = log.start_quest("test_dep", &["drive_back_goblins".to_string()]);
         assert!(result2.is_ok());
+    }
+
+    #[test]
+    fn test_merchant_serah_has_shop_items() {
+        let (npcs, _) = build_narrative();
+        let serah = npcs.get("merchant_serah").unwrap();
+        assert!(!serah.shop_item_ids.is_empty(), "Merchant Serah should have shop items");
+        assert!(serah.shop_item_ids.contains(&"health_potion".to_string()));
+        assert!(serah.shop_item_ids.contains(&"antidote".to_string()));
+    }
+
+    #[test]
+    fn test_blacksmith_grund_has_shop_items() {
+        let (npcs, _) = build_narrative();
+        let grund = npcs.get("blacksmith_grund").unwrap();
+        assert!(!grund.shop_item_ids.is_empty(), "Blacksmith Grund should stock materials");
+        assert!(grund.shop_item_ids.contains(&"iron_ingot".to_string()));
+        assert!(grund.shop_item_ids.contains(&"leather".to_string()));
     }
 }

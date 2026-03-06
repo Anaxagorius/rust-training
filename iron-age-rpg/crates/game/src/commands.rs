@@ -88,6 +88,12 @@ pub fn handle_command(input: &str, state: &mut GameState) -> CommandResult {
                             npc.quest_ids.join(", ")
                         ));
                     }
+                    if !npc.shop_item_ids.is_empty() {
+                        out.push_str(&format!(
+                            "\n  [Shop available — type 'shop {}' to browse wares]",
+                            npc_id
+                        ));
+                    }
                     // Quest tracking
                     state.quest_log.on_talk(&npc_id);
                     out
@@ -174,6 +180,24 @@ pub fn handle_command(input: &str, state: &mut GameState) -> CommandResult {
 
         "alloc" | "allocate" => {
             alloc_stat(state, arg)
+        }
+
+        "shop" | "store" => {
+            show_shop(state, arg)
+        }
+
+        "buy" | "purchase" => {
+            if arg.is_empty() {
+                return CommandResult::Message("Buy what? e.g. 'buy health_potion'.".to_string());
+            }
+            buy_item(state, arg)
+        }
+
+        "sell" => {
+            if arg.is_empty() {
+                return CommandResult::Message("Sell what? e.g. 'sell wolf_pelt'.".to_string());
+            }
+            sell_item(state, arg)
         }
 
         "attack" | "fight" => {
@@ -349,11 +373,7 @@ pub fn handle_command(input: &str, state: &mut GameState) -> CommandResult {
 fn use_item(state: &mut GameState, item_name: &str) -> String {
     use iron_age_inventory::ItemType;
 
-    let item_id = item_name.to_lowercase().replace(' ', "_");
-    // Check inventory
-    let found = state.inventory.items.iter().find(|i| {
-        i.id == item_id || i.name.to_lowercase().replace(' ', "_") == item_id
-    }).cloned();
+    let found = find_in_inventory(state, item_name);
 
     match found {
         None => format!("You don't have '{}'.", item_name),
@@ -379,6 +399,23 @@ fn use_item(state: &mut GameState, item_name: &str) -> String {
                     let _ = state.inventory.remove_item(&item.id, 1);
                     "The antidote clears your system.".to_string()
                 }
+                ItemType::ClarityPotion => {
+                    let restore = 20 + state.player.character.stats.intelligence * 2;
+                    let c = &mut state.player.character;
+                    let before = c.mana;
+                    c.mana = (c.mana + restore).min(c.max_mana);
+                    let actual = c.mana - before;
+                    let _ = state.inventory.remove_item(&item.id, 1);
+                    format!("You drink the clarity potion and restore {} mana.", actual)
+                }
+                ItemType::FortifyPotion => {
+                    use iron_age_core::StatusEffect;
+                    let c = &mut state.player.character;
+                    c.status_effects.retain(|e| e.name() != "Regen");
+                    c.status_effects.push(StatusEffect::Regen { heal_per_turn: 5, turns_remaining: 5 });
+                    let _ = state.inventory.remove_item(&item.id, 1);
+                    "You drink the fortify potion. You feel vigour coursing through you (Regen for 5 turns).".to_string()
+                }
                 _ => format!("You can't use {} that way.", item.name),
             }
         }
@@ -387,10 +424,7 @@ fn use_item(state: &mut GameState, item_name: &str) -> String {
 
 fn equip_item(state: &mut GameState, item_name: &str) -> String {
     let item_id = item_name.to_lowercase().replace(' ', "_");
-    // Find matching item in inventory
-    let found = state.inventory.items.iter().find(|i| {
-        i.id == item_id || i.name.to_lowercase().replace(' ', "_") == item_id
-    }).cloned();
+    let found = find_in_inventory(state, item_name);
 
     match found {
         None => format!("You don't have '{}'.", item_name),
@@ -679,6 +713,158 @@ impl<R: rand::Rng> GenIndex for R {
     fn gen_index(&mut self, len: usize) -> usize {
         if len == 0 { return 0; }
         self.gen_range(0..len)
+    }
+}
+
+// ── Shop helpers ──────────────────────────────────────────────────────────────
+
+/// Look up an item in the inventory by id or by normalised name.
+fn find_in_inventory(state: &GameState, item_name: &str) -> Option<iron_age_inventory::Item> {
+    let item_id = item_name.to_lowercase().replace(' ', "_");
+    state.inventory.items.iter().find(|i| {
+        i.id == item_id || i.name.to_lowercase().replace(' ', "_") == item_id
+    }).cloned()
+}
+
+/// Find all NPC IDs that have a shop and are present at the current location.
+fn shop_npcs_at_location(state: &GameState) -> Vec<String> {
+    let npc_ids = state.world.current_location()
+        .map(|l| l.npc_ids.clone())
+        .unwrap_or_default();
+    npc_ids.into_iter()
+        .filter(|id| {
+            state.npcs.get(id)
+                .map_or(false, |n| !n.shop_item_ids.is_empty())
+        })
+        .collect()
+}
+
+/// `shop` / `shop <npc_id>` — display a merchant's wares.
+fn show_shop(state: &GameState, npc_arg: &str) -> String {
+    let npc_id = if npc_arg.is_empty() {
+        // Auto-pick the first merchant at this location
+        let merchants = shop_npcs_at_location(state);
+        if merchants.is_empty() {
+            return "There is no merchant here. \
+                    Find a village or market.".to_string();
+        }
+        if merchants.len() > 1 {
+            let names: Vec<String> = merchants.iter()
+                .filter_map(|id| state.npcs.get(id).map(|n| format!("{} ({})", n.name, id)))
+                .collect();
+            return format!(
+                "Multiple merchants here. Specify one: {}\nExample: 'shop {}'",
+                names.join(", "), merchants[0]
+            );
+        }
+        merchants[0].clone()
+    } else {
+        npc_arg.to_lowercase().replace(' ', "_")
+    };
+
+    let npc = match state.npcs.get(&npc_id) {
+        None => return format!("There is no merchant called '{}'.", npc_arg),
+        Some(n) => n,
+    };
+
+    if npc.shop_item_ids.is_empty() {
+        return format!("{} doesn't sell anything.", npc.name);
+    }
+
+    let mut out = format!("── {}'s Wares ──\n", npc.name);
+    out.push_str(&format!("  Your gold: {}\n", state.gold));
+    out.push_str("  Item                        Buy    Sell\n");
+    out.push_str("  ──────────────────────────────────────\n");
+    for item_id in &npc.shop_item_ids {
+        if let Some(item) = iron_age_data::find_item(item_id) {
+            let buy_price = item.value.max(1);
+            let sell_price = (item.value / 2).max(1);
+            out.push_str(&format!(
+                "  {:<28} {:>3}g   {:>3}g\n",
+                item.name, buy_price, sell_price
+            ));
+        }
+    }
+    out.push_str("\n  Type 'buy <item_id>' to purchase, 'sell <item_id>' to sell.\n");
+    out
+}
+
+/// `buy <item_id>` — purchase an item from a merchant at the current location.
+fn buy_item(state: &mut GameState, item_name: &str) -> String {
+    let item_id = item_name.to_lowercase().replace(' ', "_");
+
+    // Find a merchant at the current location that stocks this item
+    let merchant_id = {
+        let merchants = shop_npcs_at_location(state);
+        merchants.into_iter().find(|npc_id| {
+            state.npcs.get(npc_id)
+                .map_or(false, |n| n.shop_item_ids.iter().any(|id| id == &item_id))
+        })
+    };
+
+    let merchant_id = match merchant_id {
+        None => {
+            return format!(
+                "No merchant here sells '{}'. \
+                 Type 'shop' to see available wares.",
+                item_name
+            );
+        }
+        Some(id) => id,
+    };
+
+    let item = match iron_age_data::find_item(&item_id) {
+        None => return format!("Unknown item '{}'.", item_name),
+        Some(i) => i,
+    };
+
+    let buy_price = item.value.max(1);
+    if state.gold < buy_price {
+        let merchant_name = state.npcs.get(&merchant_id)
+            .map(|n| n.name.as_str())
+            .unwrap_or("The merchant");
+        return format!(
+            "{} asks {} gold for {}, but you only have {} gold.",
+            merchant_name, buy_price, item.name, state.gold
+        );
+    }
+
+    let item_name_display = item.name.clone();
+    match state.inventory.add_item(item) {
+        Ok(_) => {
+            state.gold -= buy_price;
+            format!(
+                "You buy {} for {} gold. Gold remaining: {}.",
+                item_name_display, buy_price, state.gold
+            )
+        }
+        Err(_) => "Your inventory is full.".to_string(),
+    }
+}
+
+/// `sell <item_id>` — sell an item from inventory to a merchant at the current location.
+fn sell_item(state: &mut GameState, item_name: &str) -> String {
+    // There must be at least one merchant here
+    let has_merchant = !shop_npcs_at_location(state).is_empty();
+    if !has_merchant {
+        return "There is no merchant here to sell to. \
+                Find a village or market.".to_string();
+    }
+
+    let found = find_in_inventory(state, item_name);
+
+    match found {
+        None => format!("You don't have '{}'.", item_name),
+        Some(item) => {
+            let sell_price = (item.value / 2).max(1);
+            let item_name_display = item.name.clone();
+            let _ = state.inventory.remove_item(&item.id, 1);
+            state.gold += sell_price;
+            format!(
+                "You sell {} for {} gold. Gold: {}.",
+                item_name_display, sell_price, state.gold
+            )
+        }
     }
 }
 

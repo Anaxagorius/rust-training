@@ -674,6 +674,8 @@ pub fn all_items() -> Vec<Item> {
         Item::new_consumable("health_potion", "Health Potion", ItemType::HealthPotion, 5),
         Item::new_consumable("stamina_potion", "Stamina Potion", ItemType::StaminaPotion, 5),
         Item::new_consumable("antidote", "Antidote", ItemType::AntidotePotion, 5),
+        Item::new_consumable("clarity_potion", "Clarity Potion", ItemType::ClarityPotion, 5),
+        Item::new_consumable("fortify_potion", "Fortify Potion", ItemType::FortifyPotion, 5),
         Item::new_consumable("campfire_stew", "Campfire Stew", ItemType::HealthPotion, 3),
         Item::new_consumable("pitch_bomb", "Pitch Bomb", ItemType::PitchBomb, 3),
 
@@ -1321,5 +1323,15 @@ mod tests {
         let (gold, items) = roll_loot("nonexistent_enemy", &mut rng);
         assert_eq!(gold, 0);
         assert!(items.is_empty());
+    }
+
+    #[test]
+    fn test_clarity_and_fortify_potions_exist() {
+        use iron_age_inventory::ItemType;
+        let clarity = find_item("clarity_potion").expect("clarity_potion should be in catalog");
+        assert!(matches!(clarity.item_type, ItemType::ClarityPotion));
+
+        let fortify = find_item("fortify_potion").expect("fortify_potion should be in catalog");
+        assert!(matches!(fortify.item_type, ItemType::FortifyPotion));
     }
 }
