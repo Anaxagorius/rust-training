@@ -2,7 +2,7 @@ use iron_age_world::Location;
 use iron_age_character::Character;
 use iron_age_combat::Combatant;
 use iron_age_narrative::Quest;
-use iron_age_inventory::Inventory;
+use iron_age_inventory::{Equipment, EquipSlot, Inventory};
 
 pub fn title_screen() -> String {
     "
@@ -88,9 +88,33 @@ pub fn inventory_display(inv: &Inventory, gold: u32) -> String {
         out.push_str("  (empty)\n");
     } else {
         for item in &inv.items {
-            out.push_str(&format!("  {} x{} — {}\n",
-                item.name, item.quantity, item.description));
+            let equip_tag = if item.equip_slot.is_some() { " [equippable]" } else { "" };
+            out.push_str(&format!("  {} x{}{} — {}\n",
+                item.name, item.quantity, equip_tag, item.description));
         }
+    }
+    out
+}
+
+pub fn equipment_display(eq: &Equipment) -> String {
+    let slots: &[(&str, &EquipSlot)] = &[
+        ("Main Hand  ", &EquipSlot::MainHand),
+        ("Off Hand   ", &EquipSlot::OffHand),
+        ("Helmet     ", &EquipSlot::Helmet),
+        ("Shoulders  ", &EquipSlot::Shoulders),
+        ("Torso      ", &EquipSlot::Torso),
+        ("Leggings   ", &EquipSlot::Leggings),
+        ("Cape       ", &EquipSlot::Cape),
+        ("Amulet     ", &EquipSlot::Amulet),
+        ("Ring 1     ", &EquipSlot::Ring1),
+        ("Ring 2     ", &EquipSlot::Ring2),
+    ];
+    let mut out = "── Equipped Gear ──\n".to_string();
+    for (label, slot) in slots {
+        let item_str = eq.get_slot(slot)
+            .map(|i| format!("{} — {}", i.name, i.description))
+            .unwrap_or_else(|| "(empty)".to_string());
+        out.push_str(&format!("  {}: {}\n", label, item_str));
     }
     out
 }
@@ -137,6 +161,10 @@ pub fn help_text() -> &'static str {
   flee                     — Attempt to flee from combat
   stats                    — Show your character sheet
   inventory / inv          — Show your inventory
+  equipment / gear / eq    — Show your equipped gear
+  equip <item>             — Equip an item from your inventory
+  unequip <slot>           — Unequip an item (mainhand, offhand, helmet, etc.)
+  alloc <stat> [n]         — Spend stat points (str/int/wis/con/dex/cha)
   quests / q               — Show your quest log
   rest                     — Rest at a safe location
   use <item>               — Use a consumable item
@@ -144,6 +172,7 @@ pub fn help_text() -> &'static str {
   craft <recipe_id>        — Craft an item
   accept <quest_id>        — Accept a quest from an NPC
   complete <quest_id>      — Turn in a completed quest
+  save                     — Save your progress to savegame.json
   help                     — Show this help
   quit                     — Quit the game
 "

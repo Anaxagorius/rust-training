@@ -1,6 +1,6 @@
 use iron_age_character::Character;
 use iron_age_combat::Combatant;
-use iron_age_inventory::Inventory;
+use iron_age_inventory::{Equipment, Inventory};
 use iron_age_crafting::CraftingSystem;
 use iron_age_world::{WorldMap, build_starting_world};
 use iron_age_narrative::{NpcRegistry, QuestLog, build_narrative};
@@ -8,6 +8,7 @@ use iron_age_data::{starter_items, find_item};
 
 pub struct GameState {
     pub player: Combatant,
+    pub equipment: Equipment,
     pub inventory: Inventory,
     pub crafting: CraftingSystem,
     pub world: WorldMap,
@@ -41,6 +42,7 @@ impl GameState {
 
         Self {
             player,
+            equipment: Equipment::default(),
             inventory,
             crafting,
             world,
