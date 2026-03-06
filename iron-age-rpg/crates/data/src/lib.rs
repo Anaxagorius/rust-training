@@ -267,6 +267,24 @@ pub fn find_template(id: &str) -> Option<EnemyTemplate> {
     all_enemy_templates().into_iter().find(|t| t.id == id)
 }
 
+/// Roll loot for a defeated enemy. Returns (gold, item_ids_dropped).
+/// Each loot_item_id has a 50% drop chance.
+pub fn roll_loot(template_id: &str, rng: &mut impl Rng) -> (u32, Vec<String>) {
+    let Some(t) = find_template(template_id) else {
+        return (0, vec![]);
+    };
+    let gold = if t.gold_max > t.gold_min {
+        rng.gen_range(t.gold_min..=t.gold_max)
+    } else {
+        t.gold_min
+    };
+    let items = t.loot_item_ids.iter()
+        .filter(|_| rng.gen_bool(0.5))
+        .cloned()
+        .collect();
+    (gold, items)
+}
+
 /// Spawn a random enemy appropriate for a given difficulty tier.
 pub fn spawn_random_enemy(difficulty: u32, rng: &mut impl Rng) -> Option<Combatant> {
     let pool: Vec<EnemyTemplate> = all_enemy_templates()
@@ -424,5 +442,24 @@ mod tests {
         let warlord = find_template("goblin_warlord").unwrap();
         let max_level = templates.iter().map(|t| t.level).max().unwrap();
         assert_eq!(warlord.level, max_level);
+    }
+
+    #[test]
+    fn test_roll_loot_returns_gold_in_range() {
+        let mut rng = rand::rngs::StdRng::seed_from_u64(42);
+        let template = find_template("goblin_scout").unwrap();
+        for _ in 0..20 {
+            let (gold, _) = roll_loot("goblin_scout", &mut rng);
+            assert!(gold >= template.gold_min && gold <= template.gold_max,
+                "gold {} out of range [{}, {}]", gold, template.gold_min, template.gold_max);
+        }
+    }
+
+    #[test]
+    fn test_roll_loot_unknown_template_returns_zero() {
+        let mut rng = rand::rngs::StdRng::seed_from_u64(0);
+        let (gold, items) = roll_loot("nonexistent_enemy", &mut rng);
+        assert_eq!(gold, 0);
+        assert!(items.is_empty());
     }
 }
