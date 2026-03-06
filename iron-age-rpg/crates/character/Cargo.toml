@@ -1,0 +1,8 @@
+[package]
+name = "iron-age-character"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+iron-age-core = { path = "../core" }
+serde = { workspace = true }

@@ -1,0 +1,10 @@
+[package]
+name = "iron-age-combat"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+iron-age-core = { path = "../core" }
+iron-age-character = { path = "../character" }
+serde = { workspace = true }
+rand = { workspace = true }
