@@ -1,0 +1,21 @@
+[package]
+name = "iron-age-game"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "iron-age-rpg"
+path = "src/main.rs"
+
+[dependencies]
+iron-age-core = { path = "../core" }
+iron-age-character = { path = "../character" }
+iron-age-combat = { path = "../combat" }
+iron-age-inventory = { path = "../inventory" }
+iron-age-crafting = { path = "../crafting" }
+iron-age-world = { path = "../world" }
+iron-age-narrative = { path = "../narrative" }
+iron-age-data = { path = "../data" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+rand = { workspace = true }
