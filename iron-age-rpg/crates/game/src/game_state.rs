@@ -18,6 +18,9 @@ pub struct GameState {
     pub turn: u32,
     #[allow(dead_code)]
     pub resting: bool,
+    /// Steps taken in dangerous areas since the last random encounter.
+    /// This drives the FF-style scaling encounter probability.
+    pub danger_steps: u32,
 }
 
 impl GameState {
@@ -51,6 +54,7 @@ impl GameState {
             gold: 10,
             turn: 0,
             resting: false,
+            danger_steps: 0,
         }
     }
 
@@ -111,6 +115,7 @@ impl GameState {
             c.stamina = c.max_stamina;
             c.mana = c.max_mana;
             c.status_effects.clear();
+            self.danger_steps = 0;
             format!(
                 "You rest and recover fully. HP: {}/{}, Stamina: {}/{}, Mana: {}/{}",
                 c.hp, c.max_hp, c.stamina, c.max_stamina, c.mana, c.max_mana

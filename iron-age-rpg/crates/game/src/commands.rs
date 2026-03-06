@@ -39,12 +39,23 @@ pub fn handle_command(input: &str, state: &mut GameState) -> CommandResult {
                     // Quest: location tracking
                     let quest_msgs = state.quest_log.on_reach_location(&loc_id);
 
-                    // Check for random encounter
+                    // Check for random encounter (FF-style scaled probability)
                     let loc = state.world.current_location().unwrap();
                     let difficulty = loc.region_type.encounter_difficulty();
+                    let is_safe = loc.is_safe;
                     let encounter_msgs = if difficulty > 0 {
-                        maybe_encounter(state, difficulty)
+                        let msgs = maybe_encounter(state, difficulty);
+                        if !msgs.is_empty() {
+                            state.danger_steps = 0;
+                        } else {
+                            state.danger_steps += 1;
+                        }
+                        msgs
                     } else {
+                        // Safe area resets the danger counter
+                        if is_safe {
+                            state.danger_steps = 0;
+                        }
                         Vec::new()
                     };
 
@@ -609,16 +620,31 @@ impl<R: rand::Rng> GenIndex for R {
     }
 }
 
+/// FF-style scaled random encounter.
+///
+/// Base encounter chance increases with each step taken in dangerous areas
+/// since the last encounter (`state.danger_steps`). This mirrors the
+/// "encounter accumulation" feel of Final Fantasy games — the longer you
+/// roam without a fight, the more likely one becomes.
+///
+/// Probability formula:
+///   chance = (difficulty * 0.06) + (danger_steps * 0.07)
+///   capped at 0.95 (95%).
+///
+/// At valley difficulty (2), with danger_steps accumulated from prior steps:
+///   step 1 → 12%   step 3 → 26%   step 5 → 40%   step 8 → 61%
 fn maybe_encounter(state: &mut GameState, difficulty: u32) -> Vec<String> {
     let mut rng = rand::rngs::StdRng::seed_from_u64(
         std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .map_or(state.turn as u64, |d| d.subsec_nanos() as u64 + state.turn as u64)
     );
-    // 40% chance of encounter when entering a dangerous area
+    let base = difficulty as f32 * 0.06;
+    let step_bonus = state.danger_steps as f32 * 0.07;
+    let encounter_chance = (base + step_bonus).min(0.95);
+
     let roll: f32 = rng.gen();
-    if roll < 0.40 {
-        // Pick a template from the valid pool
+    if roll < encounter_chance {
         use iron_age_data::all_enemy_templates;
         let pool: Vec<_> = all_enemy_templates()
             .into_iter()
