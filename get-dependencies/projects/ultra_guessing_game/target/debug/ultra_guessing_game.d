@@ -1,1 +1,1 @@
-C:\Users\W0516036\desktop\rust\get-dependencies\projects\ultra_guessing_game\target\debug\ultra_guessing_game.exe: C:\Users\W0516036\desktop\rust\get-dependencies\projects\ultra_guessing_game\src\main.rs
+/home/runner/work/rust-training/rust-training/get-dependencies/projects/ultra_guessing_game/target/debug/ultra_guessing_game: /home/runner/work/rust-training/rust-training/get-dependencies/projects/ultra_guessing_game/src/main.rs
