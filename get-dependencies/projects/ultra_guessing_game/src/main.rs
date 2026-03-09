@@ -1,3 +1,4 @@
+mod checkers;
 mod minesweeper;
 
 use rand::Rng;
@@ -74,6 +75,7 @@ enum GameMode {
     Hangman,
     Wordle,
     Minesweeper,
+    Checkers,
 }
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -217,6 +219,10 @@ enum Achievement {
     MinesweeperChampion,
     /// Won minesweeper on Peasant difficulty in under 60 seconds.
     MinesweeperSpeedrunner,
+    /// Beat the AI at checkers.
+    CheckersVictor,
+    /// Beat the AI at checkers after both sides had a king on the board.
+    CheckersKing,
 }
 
 impl Achievement {
@@ -238,6 +244,8 @@ impl Achievement {
             Achievement::MinesweeperVictor      => "💣",
             Achievement::MinesweeperChampion    => "⚔️",
             Achievement::MinesweeperSpeedrunner => "🏃",
+            Achievement::CheckersVictor         => "♟",
+            Achievement::CheckersKing           => "♛",
         }
     }
 
@@ -259,6 +267,8 @@ impl Achievement {
             Achievement::MinesweeperVictor      => "Mine Victor",
             Achievement::MinesweeperChampion    => "Champion Cleared",
             Achievement::MinesweeperSpeedrunner => "Speedrunner",
+            Achievement::CheckersVictor         => "Checkers Champion",
+            Achievement::CheckersKing           => "King of the Board",
         }
     }
 
@@ -280,6 +290,8 @@ impl Achievement {
             Achievement::MinesweeperVictor      => "Cleared a minesweeper board without hitting a trap",
             Achievement::MinesweeperChampion    => "Won minesweeper on Champion difficulty",
             Achievement::MinesweeperSpeedrunner => "Won Peasant minesweeper in under 60 seconds",
+            Achievement::CheckersVictor         => "Defeated the AI opponent at checkers",
+            Achievement::CheckersKing           => "Won a checkers game where both sides had kings",
         }
     }
 }
@@ -532,6 +544,59 @@ fn main() {
                     format_duration(avg_secs),
                 );
             }
+
+            GameMode::Checkers => {
+                println!("\n{}", col(YELLOW, "♟  Launching Iron Age Checkers…"));
+                println!("{}", col(CYAN, "  (Arrow keys: move cursor | Enter/Space: select/move | Esc: deselect | Q: quit)"));
+                println!("{}", col(CYAN, "─".repeat(62)));
+
+                let (won, kings_appeared, elapsed_secs) = play_checkers();
+
+                total_games += 1;
+                total_secs  += elapsed_secs;
+                if won { total_wins += 1; }
+
+                // ── Checkers achievements ──────────────────────────────────────
+                let mut new_achievements: Vec<Achievement> = Vec::new();
+
+                if won {
+                    new_achievements.push(Achievement::CheckersVictor);
+                }
+                if won && kings_appeared {
+                    new_achievements.push(Achievement::CheckersKing);
+                }
+                if total_games >= 5 && !session_achievements.contains(&Achievement::Persistent) {
+                    new_achievements.push(Achievement::Persistent);
+                }
+
+                for ach in new_achievements {
+                    if !session_achievements.contains(&ach) {
+                        println!("\n{} {} {}: {}",
+                            col(YELLOW, "🏅 ACHIEVEMENT UNLOCKED:"),
+                            ach.emoji(),
+                            col(BOLD, ach.title()),
+                            ach.description()
+                        );
+                        session_achievements.push(ach);
+                    }
+                }
+
+                let result_str = if won {
+                    col(GREEN, "✅ You defeated the AI!".to_string())
+                } else {
+                    col(RED, "💥 The AI outwitted you this time!".to_string())
+                };
+                let avg_secs = if total_games > 0 { total_secs / total_games as u64 } else { 0 };
+                println!("\n{}  ⏱ {}  │  {} game{} played  │  {} win{}  │  {} avg time/round",
+                    result_str,
+                    format_duration(elapsed_secs),
+                    col(CYAN, total_games.to_string()),
+                    if total_games == 1 { "" } else { "s" },
+                    total_wins,
+                    if total_wins == 1 { "" } else { "s" },
+                    format_duration(avg_secs),
+                );
+            }
         }
 
         if !session_achievements.is_empty() {
@@ -557,7 +622,7 @@ fn print_banner() {
     println!("{}", col(CYAN, "║") + &col(BOLD, "         🎮  ULTRA GAME SUITE v6.0 – HOME PAGE  🎮        ") + &col(CYAN, "║"));
     println!("{}", col(CYAN, "╚════════════════════════════════════════════════════════════╝"));
     println!();
-    println!("{}", col(BOLD, "  🕹️  Choose from 4 exciting games:"));
+    println!("{}", col(BOLD, "  🕹️  Choose from 5 exciting games:"));
     println!();
     println!("  {} {}",
         col(YELLOW, "1."),
@@ -591,10 +656,18 @@ fn print_banner() {
     println!("     – 3 difficulty levels: Peasant, Knight, Champion");
     println!("     – Full TUI keyboard interface with Roman-numeral clues");
     println!();
+    println!("  {} {}",
+        col(YELLOW, "5."),
+        col(BOLD, "♟  Iron Age Checkers")
+    );
+    println!("     Outmanoeuvre the AI on the ancient 8×8 board!");
+    println!("     – Full American checkers rules: mandatory captures, kings, multi-jumps");
+    println!("     – Minimax AI opponent with alpha-beta pruning (depth 5)");
+    println!();
     println!("{}", col(BOLD, "  ✨ Features across all games:"));
     println!("     • 10 unique roasters with personality");
     println!("     • Optional profanity mode 🔞");
-    println!("     • 16 achievements to unlock 🏅");
+    println!("     • 18 achievements to unlock 🏅");
     println!("     • Per-round timer ⏱️");
     println!("     • Session statistics 📊");
     println!("{}", col(CYAN, "─".repeat(62)));
@@ -1455,8 +1528,9 @@ fn ask_game_mode() -> GameMode {
     println!("  2. 💀 Hangman              – Guess the hidden word letter by letter!");
     println!("  3. 🟩 Wordle               – Guess the 5-letter word in 6 tries!");
     println!("  4. 💣 Iron Age Minesweeper – Clear the cursed ruins without hitting a trap!");
+    println!("  5. ♟  Iron Age Checkers    – Outmanoeuvre the AI on the ancient board!");
     loop {
-        print!("\n🎯 Your choice (1-4): ");
+        print!("\n🎯 Your choice (1-5): ");
         io::stdout().flush().expect("Failed to flush stdout");
 
         let mut input = String::new();
@@ -1467,7 +1541,8 @@ fn ask_game_mode() -> GameMode {
             "2" => return GameMode::Hangman,
             "3" => return GameMode::Wordle,
             "4" => return GameMode::Minesweeper,
-            _   => println!("{}", col(RED, "❌ Please enter 1, 2, 3, or 4.\n")),
+            "5" => return GameMode::Checkers,
+            _   => println!("{}", col(RED, "❌ Please enter 1, 2, 3, 4, or 5.\n")),
         }
     }
 }
@@ -2296,4 +2371,112 @@ fn play_minesweeper() -> (bool, minesweeper::board::Level, u64) {
     let _ = execute!(io::stdout(), cursor::Show, LeaveAlternateScreen);
 
     (won_any, last_level, total_secs)
+}
+
+// ── Iron Age Checkers ─────────────────────────────────────────────────────────
+
+/// Run a full checkers session (play → optional restart → return).
+/// Returns `(player_won, kings_appeared_during_game, total_elapsed_secs)`.
+fn play_checkers() -> (bool, bool, u64) {
+    use crossterm::{cursor, execute, terminal::{self, EnterAlternateScreen, LeaveAlternateScreen}};
+    use checkers::board::{Board, GameStatus, Piece};
+    use checkers::display::{draw, read_action, InputAction};
+    use std::time::Instant;
+
+    let mut stdout = io::stdout();
+
+    let _ = execute!(stdout, EnterAlternateScreen, cursor::Hide);
+    let _ = terminal::enable_raw_mode();
+
+    let mut player_won  = false;
+    let mut kings_ever  = false;
+    let mut total_secs  = 0u64;
+
+    'outer: loop {
+        let mut board = Board::new();
+        let mut cursor_row = 5usize;
+        let mut cursor_col = 1usize;
+        let start = Instant::now();
+
+        loop {
+            // Track whether any king ever appeared.
+            if !kings_ever {
+                'king_check: for row in &board.cells {
+                    for &cell in row {
+                        if matches!(cell, Piece::PlayerKing | Piece::AiKing) {
+                            kings_ever = true;
+                            break 'king_check;
+                        }
+                    }
+                }
+            }
+
+            let _ = draw(&board, cursor_row, cursor_col);
+
+            // AI's turn – apply automatically, then re-render.
+            if board.status == GameStatus::Playing
+                && board.turn == checkers::board::Turn::Ai
+            {
+                board.ai_move();
+                let _ = draw(&board, cursor_row, cursor_col);
+                if board.status != GameStatus::Playing {
+                    total_secs += start.elapsed().as_secs();
+                    if board.status == GameStatus::PlayerWon { player_won = true; }
+                    // Show result until R or Q.
+                    loop {
+                        match read_action().unwrap_or(InputAction::Quit) {
+                            InputAction::Restart => {
+                                continue 'outer;
+                            }
+                            InputAction::Quit => break 'outer,
+                            _ => {}
+                        }
+                    }
+                }
+                continue;
+            }
+
+            if board.status != GameStatus::Playing {
+                total_secs += start.elapsed().as_secs();
+                if board.status == GameStatus::PlayerWon { player_won = true; }
+                loop {
+                    match read_action().unwrap_or(InputAction::Quit) {
+                        InputAction::Restart => continue 'outer,
+                        InputAction::Quit    => break 'outer,
+                        _ => {}
+                    }
+                }
+            }
+
+            // Player input.
+            match read_action().unwrap_or(InputAction::Quit) {
+                InputAction::Move(dr, dc) => {
+                    cursor_row = (cursor_row as i32 + dr).clamp(0, 7) as usize;
+                    cursor_col = (cursor_col as i32 + dc).clamp(0, 7) as usize;
+                }
+                InputAction::Confirm => {
+                    if board.selected.is_some() {
+                        // Try to move to cursor; if not a valid dest, re-select.
+                        if !board.move_selected_to(cursor_row, cursor_col) {
+                            board.deselect();
+                            board.select(cursor_row, cursor_col);
+                        }
+                    } else {
+                        board.select(cursor_row, cursor_col);
+                    }
+                }
+                InputAction::Deselect => {
+                    board.deselect();
+                }
+                InputAction::Restart => continue 'outer,
+                InputAction::Quit    => break 'outer,
+                InputAction::None    => {}
+            }
+        }
+    }
+
+    let _ = terminal::disable_raw_mode();
+    let _ = execute!(io::stdout(), cursor::Show, LeaveAlternateScreen);
+
+    (player_won, kings_ever, total_secs)
 }
