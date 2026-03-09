@@ -64,18 +64,18 @@ impl Board {
     pub fn new() -> Self {
         let mut cells = [[Piece::Empty; 8]; 8];
         // AI occupies the top three rows on dark squares.
-        for row in 0..3 {
-            for col in 0..8 {
+        for (row, cells_row) in cells.iter_mut().enumerate().take(3) {
+            for (col, cell) in cells_row.iter_mut().enumerate() {
                 if (row + col) % 2 == 1 {
-                    cells[row][col] = Piece::Ai;
+                    *cell = Piece::Ai;
                 }
             }
         }
         // Player occupies the bottom three rows on dark squares.
-        for row in 5..8 {
-            for col in 0..8 {
+        for (row, cells_row) in cells.iter_mut().enumerate().skip(5) {
+            for (col, cell) in cells_row.iter_mut().enumerate() {
                 if (row + col) % 2 == 1 {
-                    cells[row][col] = Piece::Player;
+                    *cell = Piece::Player;
                 }
             }
         }
@@ -264,7 +264,7 @@ fn regular_moves(
     for &(dr, dc) in dirs {
         let nr = row as i32 + dr;
         let nc = col as i32 + dc;
-        if nr >= 0 && nr < 8 && nc >= 0 && nc < 8 {
+        if (0i32..8).contains(&nr) && (0i32..8).contains(&nc) {
             let (nr, nc) = (nr as usize, nc as usize);
             if cells[nr][nc].is_empty() {
                 moves.push(CheckersMove { from: (row, col), to: (nr, nc), captures: vec![] });
@@ -280,6 +280,7 @@ fn regular_moves(
 /// * `visited`   – landing squares already visited in this chain (prevents cycles).
 /// * `result`    – accumulate completed moves here.
 /// * `origin`    – the piece's true starting square (for `from` in the final move).
+#[allow(clippy::too_many_arguments)]
 fn jumps_from(
     row: usize, col: usize,
     cells: &[[Piece; 8]; 8],
@@ -309,8 +310,8 @@ fn jumps_from(
         let lr = row as i32 + 2 * dr;
         let lc = col as i32 + 2 * dc;
 
-        if mr < 0 || mr >= 8 || mc < 0 || mc >= 8 { continue; }
-        if lr < 0 || lr >= 8 || lc < 0 || lc >= 8 { continue; }
+        if !(0i32..8).contains(&mr) || !(0i32..8).contains(&mc) { continue; }
+        if !(0i32..8).contains(&lr) || !(0i32..8).contains(&lc) { continue; }
 
         let mid  = (mr as usize, mc as usize);
         let land = (lr as usize, lc as usize);
