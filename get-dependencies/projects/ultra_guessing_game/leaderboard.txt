@@ -1,1 +1,2 @@
-Hard|Tom|5
+Easy|TestPlayer|4|1|66
+Hard|Tom|5|0|0

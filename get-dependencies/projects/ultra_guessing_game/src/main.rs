@@ -3,6 +3,21 @@ use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::fs;
 use std::io::{self, Write};
+use std::time::Instant;
+
+// ── ANSI Color Helpers ────────────────────────────────────────────────────────
+const RESET:   &str = "\x1b[0m";
+const BOLD:    &str = "\x1b[1m";
+const RED:     &str = "\x1b[31m";
+const GREEN:   &str = "\x1b[32m";
+const YELLOW:  &str = "\x1b[33m";
+const BLUE:    &str = "\x1b[34m";
+const MAGENTA: &str = "\x1b[35m";
+const CYAN:    &str = "\x1b[36m";
+
+fn col(color: &str, text: impl std::fmt::Display) -> String {
+    format!("{}{}{}", color, text, RESET)
+}
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 enum Roaster {
@@ -50,46 +65,129 @@ impl Roaster {
     }
 }
 
-#[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
 enum Difficulty {
     Easy,
     Medium,
     Hard,
     Insane,
+    /// Player-defined range – not tracked on the leaderboard.
+    Custom(u32, u32),
+}
+
+impl std::hash::Hash for Difficulty {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        match self {
+            Difficulty::Easy         => 0u8.hash(state),
+            Difficulty::Medium       => 1u8.hash(state),
+            Difficulty::Hard         => 2u8.hash(state),
+            Difficulty::Insane       => 3u8.hash(state),
+            Difficulty::Custom(a, b) => { 4u8.hash(state); a.hash(state); b.hash(state); }
+        }
+    }
 }
 
 impl Difficulty {
     fn range(&self) -> (u32, u32) {
         match self {
-            Difficulty::Easy => (1, 100),
-            Difficulty::Medium => (1, 500),
-            Difficulty::Hard => (1, 1000),
-            Difficulty::Insane => (1, 10000),
+            Difficulty::Easy          => (1, 100),
+            Difficulty::Medium        => (1, 500),
+            Difficulty::Hard          => (1, 1000),
+            Difficulty::Insane        => (1, 10000),
+            Difficulty::Custom(lo, hi) => (*lo, *hi),
         }
     }
 
     fn name(&self) -> &'static str {
         match self {
-            Difficulty::Easy => "Easy",
-            Difficulty::Medium => "Medium",
-            Difficulty::Hard => "Hard",
-            Difficulty::Insane => "Insane",
+            Difficulty::Easy       => "Easy",
+            Difficulty::Medium     => "Medium",
+            Difficulty::Hard       => "Hard",
+            Difficulty::Insane     => "Insane",
+            Difficulty::Custom(..) => "Custom",
         }
     }
 
     fn emoji(&self) -> &'static str {
         match self {
-            Difficulty::Easy => "😊",
-            Difficulty::Medium => "😤",
-            Difficulty::Hard => "💀",
-            Difficulty::Insane => "👹",
+            Difficulty::Easy       => "😊",
+            Difficulty::Medium     => "😤",
+            Difficulty::Hard       => "💀",
+            Difficulty::Insane     => "👹",
+            Difficulty::Custom(..) => "🎨",
         }
+    }
+
+    fn is_custom(&self) -> bool {
+        matches!(self, Difficulty::Custom(..))
     }
 }
 
 const BAD_WORDS: &[&str] = &[
     "fuck", "shit", "cunt", "bastard", "bellend", "wanker", "piss", "asshole", "dick",
 ];
+
+// ── Achievement System ─────────────────────────────────────────────────────────
+#[derive(Debug, PartialEq, Clone)]
+enum Achievement {
+    /// Nailed it on the very first attempt.
+    FirstTry,
+    /// Won in ≤ 3 attempts.
+    SpeedDemon,
+    /// Won on Insane difficulty.
+    Insaniac,
+    /// Won without using any hints.
+    NoHints,
+    /// Burned through all 3 hints in one round.
+    HintAddict,
+    /// Winning guess ended in the digit 7.
+    LuckyNumber,
+    /// Completed 5 or more rounds in a single session.
+    Persistent,
+    /// First-try win on Hard or Insane.
+    Perfectionist,
+}
+
+impl Achievement {
+    fn emoji(&self) -> &'static str {
+        match self {
+            Achievement::FirstTry    => "🎯",
+            Achievement::SpeedDemon  => "⚡",
+            Achievement::Insaniac    => "👹",
+            Achievement::NoHints     => "🧠",
+            Achievement::HintAddict  => "💡",
+            Achievement::LuckyNumber => "🍀",
+            Achievement::Persistent  => "🔄",
+            Achievement::Perfectionist => "💎",
+        }
+    }
+
+    fn title(&self) -> &'static str {
+        match self {
+            Achievement::FirstTry    => "First Try!",
+            Achievement::SpeedDemon  => "Speed Demon",
+            Achievement::Insaniac    => "Insaniac",
+            Achievement::NoHints     => "No Hints Needed",
+            Achievement::HintAddict  => "Hint Addict",
+            Achievement::LuckyNumber => "Lucky Number 7",
+            Achievement::Persistent  => "Persistent",
+            Achievement::Perfectionist => "Perfectionist",
+        }
+    }
+
+    fn description(&self) -> &'static str {
+        match self {
+            Achievement::FirstTry    => "Guessed the number on the very first attempt",
+            Achievement::SpeedDemon  => "Won a round in 3 attempts or fewer",
+            Achievement::Insaniac    => "Won a round on Insane difficulty",
+            Achievement::NoHints     => "Completed a round without requesting any hints",
+            Achievement::HintAddict  => "Used all 3 hints in a single round",
+            Achievement::LuckyNumber => "Won with a guess ending in the digit 7",
+            Achievement::Persistent  => "Played 5 or more rounds in one session",
+            Achievement::Perfectionist => "First-try win on Hard or Insane difficulty",
+        }
+    }
+}
 
 fn main() {
     print_banner();
@@ -99,31 +197,95 @@ fn main() {
 
     let profane = ask_profane();
     if profane {
-        println!("🔞 Profanity mode: ON – Brace yourself for spicy roasts.\n");
+        println!("🔞 Profanity mode: {} – Brace yourself for spicy roasts.\n", col(RED, "ON"));
     } else {
-        println!("😇 Profanity mode: OFF – Keeping it family-friendly.\n");
+        println!("😇 Profanity mode: {} – Keeping it family-friendly.\n", col(GREEN, "OFF"));
     }
 
     let mut leaderboards = load_leaderboards();
-    let mut total_games = 0;
-    let mut total_attempts = 0;
+    let mut total_games   = 0u32;
+    let mut total_attempts = 0u32;
+    let mut total_secs    = 0u64;
+    let mut session_achievements: Vec<Achievement> = Vec::new();
 
     loop {
         let difficulty = ask_difficulty();
-        let (attempts, guesses) = play_round(difficulty, roaster, profane);
+        let (attempts, guesses, elapsed_secs, hints_used) =
+            play_round(difficulty, roaster, profane);
 
-        total_games += 1;
+        total_games   += 1;
         total_attempts += attempts;
+        total_secs    += elapsed_secs;
 
-        print_win_stats(attempts, &guesses);
-        update_leaderboard(&mut leaderboards, difficulty, attempts);
-        display_leaderboards(&leaderboards);
+        // ── Collect achievements ───────────────────────────────────────────
+        let mut new_achievements: Vec<Achievement> = Vec::new();
 
-        println!("\n📊 Session Stats: {} game{} played, {:.1} avg attempts",
+        if attempts == 1 {
+            new_achievements.push(Achievement::FirstTry);
+        }
+        if attempts <= 3 {
+            new_achievements.push(Achievement::SpeedDemon);
+        }
+        if difficulty == Difficulty::Insane {
+            new_achievements.push(Achievement::Insaniac);
+        }
+        if hints_used == 0 {
+            new_achievements.push(Achievement::NoHints);
+        }
+        if hints_used >= 3 {
+            new_achievements.push(Achievement::HintAddict);
+        }
+        if let Some(&last_guess) = guesses.last() {
+            if last_guess % 10 == 7 {
+                new_achievements.push(Achievement::LuckyNumber);
+            }
+        }
+        if total_games >= 5 && !session_achievements.contains(&Achievement::Persistent) {
+            new_achievements.push(Achievement::Persistent);
+        }
+        if attempts == 1 && matches!(difficulty, Difficulty::Hard | Difficulty::Insane) {
+            new_achievements.push(Achievement::Perfectionist);
+        }
+
+        // Only surface each achievement once per session.
+        for ach in new_achievements {
+            if !session_achievements.contains(&ach) {
+                println!("\n{} {} {}: {}",
+                    col(YELLOW, "🏅 ACHIEVEMENT UNLOCKED:"),
+                    ach.emoji(),
+                    col(BOLD, ach.title()),
+                    ach.description()
+                );
+                session_achievements.push(ach);
+            }
+        }
+
+        print_win_stats(attempts, &guesses, elapsed_secs, hints_used);
+
+        if !difficulty.is_custom() {
+            update_leaderboard(&mut leaderboards, difficulty, attempts, hints_used, elapsed_secs);
+            display_leaderboards(&leaderboards);
+        } else {
+            println!("\n{}", col(CYAN, "ℹ️  Custom difficulty rounds are not tracked on the leaderboard."));
+        }
+
+        let avg_secs = if total_games > 0 { total_secs / total_games as u64 } else { 0 };
+        println!("\n{} {} game{} played  │  {:.1} avg attempts  │  {} avg time/round",
+            col(CYAN, "📊 Session:"),
             total_games,
             if total_games == 1 { "" } else { "s" },
-            total_attempts as f32 / total_games as f32
+            total_attempts as f32 / total_games as f32,
+            format_duration(avg_secs),
         );
+
+        if !session_achievements.is_empty() {
+            println!("{} {}", col(YELLOW, "🏅 Achievements this session:"),
+                session_achievements.iter()
+                    .map(|a| format!("{} {}", a.emoji(), a.title()))
+                    .collect::<Vec<_>>()
+                    .join("  │  ")
+            );
+        }
 
         if !ask_play_again() {
             save_leaderboards(&leaderboards);
@@ -135,15 +297,19 @@ fn main() {
 }
 
 fn print_banner() {
-    println!("{}", "=".repeat(60));
-    println!("🎲  ULTRA GUESSING GAME v2.0 – Now with 420% more roasts  🎲");
-    println!("{}", "=".repeat(60));
+    println!("{}", col(CYAN, "=".repeat(60)));
+    println!("{}", col(BOLD, "🎲  ULTRA GUESSING GAME v3.0 – Now with Achievements & Hints  🎲"));
+    println!("{}", col(CYAN, "=".repeat(60)));
     println!("Features:");
     println!("  ✨ 10 unique roasters with personality");
     println!("  🏆 Persistent leaderboards across 4 difficulties");
     println!("  🌡️  Warmth hints (getting warmer/colder)");
     println!("  🔥 Optional profanity mode");
-    println!("  📊 Session statistics tracking\n");
+    println!("  📊 Session statistics tracking");
+    println!("  💡 In-round hint system (type {} for a clue!)", col(YELLOW, "'h'"));
+    println!("  🏅 Achievement system – 8 badges to unlock");
+    println!("  ⏱️  Per-round timer");
+    println!("  🎨 Custom difficulty – define your own number range\n");
 }
 
 fn print_roaster_intro(roaster: Roaster) {
@@ -163,17 +329,18 @@ fn print_roaster_intro(roaster: Roaster) {
     println!("{}\n", "─".repeat(60));
 }
 
-fn print_win_stats(attempts: u32, guesses: &[u32]) {
-    println!("\n{}", "🌟".repeat(30));
-    println!("🏆 VICTORY! You nailed it in {} attempt{}!", 
-        attempts, 
+fn print_win_stats(attempts: u32, guesses: &[u32], elapsed_secs: u64, hints_used: u32) {
+    println!("\n{}", col(YELLOW, "🌟".repeat(30)));
+    println!("{}", col(BOLD, format!(
+        "🏆 VICTORY! You nailed it in {} attempt{}!",
+        attempts,
         if attempts == 1 { "" } else { "s" }
-    );
+    )));
     
     if attempts == 1 {
-        println!("💯 PERFECT! First try! Are you psychic?!");
+        println!("{}", col(GREEN, "💯 PERFECT! First try! Are you psychic?!"));
     } else if attempts <= 3 {
-        println!("🔥 INCREDIBLE! You're a natural!");
+        println!("{}", col(GREEN, "🔥 INCREDIBLE! You're a natural!"));
     } else if attempts <= 5 {
         println!("👏 Well done! Solid performance!");
     } else if attempts <= 10 {
@@ -181,14 +348,31 @@ fn print_win_stats(attempts: u32, guesses: &[u32]) {
     } else {
         println!("😅 Finally! That was... a journey!");
     }
+
+    println!("⏱️  Time taken: {}", col(CYAN, format_duration(elapsed_secs)));
+
+    if hints_used == 0 {
+        println!("{}", col(GREEN, "🧠 No hints used – pure skill!"));
+    } else {
+        println!("💡 Hints used: {} (each hint adds +5 to your effective score)", col(YELLOW, hints_used));
+    }
     
     println!("Your guessing journey: {}", 
-        guesses.iter()
+        col(MAGENTA, guesses.iter()
             .map(|g| g.to_string())
             .collect::<Vec<_>>()
-            .join(" → ")
+            .join(" → "))
     );
-    println!("{}\n", "🌟".repeat(30));
+    println!("{}\n", col(YELLOW, "🌟".repeat(30)));
+}
+
+/// Format a duration in seconds as a human-readable string.
+fn format_duration(secs: u64) -> String {
+    if secs < 60 {
+        format!("{}s", secs)
+    } else {
+        format!("{}m {}s", secs / 60, secs % 60)
+    }
 }
 
 fn print_goodbye(roaster: Roaster) {
@@ -209,21 +393,25 @@ fn print_goodbye(roaster: Roaster) {
     println!("{}\n", "═".repeat(60));
 }
 
-fn play_round(difficulty: Difficulty, roaster: Roaster, profane: bool) -> (u32, Vec<u32>) {
+fn play_round(difficulty: Difficulty, roaster: Roaster, profane: bool) -> (u32, Vec<u32>, u64, u32) {
     let (lower, upper) = difficulty.range();
     let secret_number = rand::thread_rng().gen_range(lower..=upper);
 
     println!("\n{} {} Mode: Guess between {} and {}", 
         difficulty.emoji(), 
-        difficulty.name(), 
-        lower, 
-        upper
+        col(BOLD, difficulty.name()),
+        col(CYAN, lower),
+        col(CYAN, upper),
     );
-    println!("💡 Hint: I've picked a number. Time to prove yourself!\n");
+    println!("💡 Hint: I've picked a number. Time to prove yourself!");
+    println!("   (Type {} at any prompt for a coded clue — up to 3 per round, +5 effective attempts each)\n",
+        col(YELLOW, "'h'"));
 
-    let mut attempts = 0u32;
-    let mut guesses = Vec::new();
+    let mut attempts   = 0u32;
+    let mut hints_used = 0u32;
+    let mut guesses    = Vec::new();
     let mut previous_diff: Option<u32> = None;
+    let round_start = Instant::now();
 
     let (mut low_jibes, mut high_jibes, win_message): (Vec<String>, Vec<String>, &'static str) = match roaster {
         Roaster::Ramsay => (
@@ -587,7 +775,7 @@ fn play_round(difficulty: Difficulty, roaster: Roaster, profane: bool) -> (u32, 
     }
 
     loop {
-        print!("💭 Your guess ({}-{}): ", lower, upper);
+        print!("💭 Your guess ({}-{}) or {} for a hint: ", lower, upper, col(YELLOW, "'h'"));
         io::stdout().flush().expect("Failed to flush stdout");
 
         let mut input = String::new();
@@ -595,16 +783,29 @@ fn play_round(difficulty: Difficulty, roaster: Roaster, profane: bool) -> (u32, 
             .read_line(&mut input)
             .expect("Failed to read line");
 
-        let guess: u32 = match input.trim().parse() {
+        let trimmed = input.trim();
+
+        // ── Hint system ──────────────────────────────────────────────────
+        if trimmed.eq_ignore_ascii_case("h") || trimmed.eq_ignore_ascii_case("hint") {
+            if hints_used >= 3 {
+                println!("{}", col(RED, "💡 No hints left! You've used all 3 for this round."));
+            } else {
+                hints_used += 1;
+                give_hint(secret_number, lower, upper, hints_used);
+            }
+            continue;
+        }
+
+        let guess: u32 = match trimmed.parse() {
             Ok(num) => num,
             Err(_) => {
-                println!("❌ That's not even a proper number. Try again.");
+                println!("{}", col(RED, "❌ That's not even a proper number. Try again."));
                 continue;
             }
         };
 
         if guess < lower || guess > upper {
-            println!("⚠️  Out of range – stick to {}-{}!", lower, upper);
+            println!("{}", col(RED, format!("⚠️  Out of range – stick to {}-{}!", lower, upper)));
             continue;
         }
 
@@ -613,29 +814,30 @@ fn play_round(difficulty: Difficulty, roaster: Roaster, profane: bool) -> (u32, 
 
         let current_diff = guess.abs_diff(secret_number);
 
-        println!("\n📍 Attempt #{}: You guessed {}", attempts, guess);
+        println!("\n📍 Attempt #{}: You guessed {}", attempts, col(BOLD, guess));
         
         match guess.cmp(&secret_number) {
             Ordering::Less => {
                 let jibe = low_jibes[rand::thread_rng().gen_range(0..low_jibes.len())].as_str();
-                println!("🔥 {jibe}");
+                println!("{}", col(RED, format!("🔥 {jibe}")));
             }
             Ordering::Greater => {
                 let jibe = high_jibes[rand::thread_rng().gen_range(0..high_jibes.len())].as_str();
-                println!("🔥 {jibe}");
+                println!("{}", col(BLUE, format!("🔥 {jibe}")));
             }
             Ordering::Equal => {
-                println!("\n{}", win_message);
-                return (attempts, guesses);
+                println!("\n{}", col(GREEN, win_message));
+                let elapsed = round_start.elapsed().as_secs();
+                return (attempts, guesses, elapsed, hints_used);
             }
         }
 
         // Warmth system
         if let Some(prev_diff) = previous_diff {
             if current_diff < prev_diff {
-                println!("🌡️  Getting WARMER! 🔥");
+                println!("{}", col(RED, "🌡️  Getting WARMER! 🔥"));
             } else if current_diff > prev_diff {
-                println!("❄️  Getting COLDER! 🧊");
+                println!("{}", col(CYAN, "❄️  Getting COLDER! 🧊"));
             } else {
                 println!("😐 Same distance – you're circling it!");
             }
@@ -644,21 +846,48 @@ fn play_round(difficulty: Difficulty, roaster: Roaster, profane: bool) -> (u32, 
         // Extra hint for Insane mode
         if difficulty == Difficulty::Insane && attempts >= 5 {
             if current_diff <= 100 {
-                println!("🎯 SUPER HOT! You're within 100!");
+                println!("{}", col(RED, "🎯 SUPER HOT! You're within 100!"));
             } else if current_diff <= 500 {
-                println!("🔥 Getting warm! Within 500!");
+                println!("{}", col(YELLOW, "🔥 Getting warm! Within 500!"));
             }
         }
 
         previous_diff = Some(current_diff);
         
         println!("📜 History: {}\n", 
-            guesses.iter()
+            col(MAGENTA, guesses.iter()
                 .map(|g| g.to_string())
                 .collect::<Vec<_>>()
-                .join(", ")
+                .join(", "))
         );
     }
+}
+
+/// Give the player a contextual hint based on how many they've already used.
+fn give_hint(secret: u32, lower: u32, upper: u32, hint_num: u32) {
+    let hint_text = match hint_num {
+        1 => {
+            // Parity hint
+            let parity = if secret % 2 == 0 { "even" } else { "odd" };
+            format!("The secret number is {}.", parity)
+        }
+        2 => {
+            // Mid-range hint: indicate which half the number falls in.
+            let mid = lower + (upper - lower) / 2;
+            let position = if secret <= mid { "in the lower half" } else { "in the upper half" };
+            format!("The secret number is {} of the range ({}-{}).", position, lower, upper)
+        }
+        3 => {
+            // Divisibility hint
+            let div5 = if secret % 5 == 0 { "divisible" } else { "not divisible" };
+            format!("The secret number is {} by 5.", div5)
+        }
+        _ => String::from("No more hints available."),
+    };
+    println!("{} {} (+5 to your effective score)",
+        col(YELLOW, "💡 Hint:"),
+        col(CYAN, &hint_text)
+    );
 }
 
 fn ask_roaster() -> Roaster {
@@ -716,12 +945,13 @@ fn ask_profane() -> bool {
 fn ask_difficulty() -> Difficulty {
     loop {
         println!("\n🎮 Choose your difficulty:\n");
-        println!("  1. {} Easy   (1–100)   – Perfect for beginners", Difficulty::Easy.emoji());
-        println!("  2. {} Medium (1–500)   – A fair challenge", Difficulty::Medium.emoji());
-        println!("  3. {} Hard   (1–1000)  – For the brave", Difficulty::Hard.emoji());
-        println!("  4. {} Insane (1–10000) – Are you psychic?", Difficulty::Insane.emoji());
+        println!("  1. {} Easy   (1–100)         – Perfect for beginners", Difficulty::Easy.emoji());
+        println!("  2. {} Medium (1–500)         – A fair challenge", Difficulty::Medium.emoji());
+        println!("  3. {} Hard   (1–1000)        – For the brave", Difficulty::Hard.emoji());
+        println!("  4. {} Insane (1–10000)       – Are you psychic?", Difficulty::Insane.emoji());
+        println!("  5. 🎨 Custom (your range)   – Define your own boundaries");
         
-        print!("\n🎯 Your choice (1-4): ");
+        print!("\n🎯 Your choice (1-5): ");
         io::stdout().flush().expect("Failed to flush stdout");
 
         let mut input = String::new();
@@ -732,13 +962,48 @@ fn ask_difficulty() -> Difficulty {
             "2" => return Difficulty::Medium,
             "3" => return Difficulty::Hard,
             "4" => return Difficulty::Insane,
-            _ => println!("❌ Please enter 1, 2, 3, or 4.\n"),
+            "5" => {
+                if let Some(range) = ask_custom_range() {
+                    return Difficulty::Custom(range.0, range.1);
+                }
+            }
+            _ => println!("{}", col(RED, "❌ Please enter 1, 2, 3, 4, or 5.\n")),
         }
     }
 }
 
-fn load_leaderboards() -> HashMap<Difficulty, Vec<(String, u32)>> {
-    let mut map: HashMap<Difficulty, Vec<(String, u32)>> = HashMap::new();
+/// Prompt the player to enter a custom min/max range. Returns None if input is invalid.
+fn ask_custom_range() -> Option<(u32, u32)> {
+    print!("  Enter minimum (≥ 1): ");
+    io::stdout().flush().expect("Failed to flush stdout");
+    let mut buf = String::new();
+    io::stdin().read_line(&mut buf).expect("Failed to read line");
+    let min: u32 = match buf.trim().parse() {
+        Ok(n) if n >= 1 => n,
+        _ => {
+            println!("{}", col(RED, "❌ Invalid minimum – must be a whole number ≥ 1."));
+            return None;
+        }
+    };
+
+    print!("  Enter maximum (> minimum): ");
+    io::stdout().flush().expect("Failed to flush stdout");
+    buf.clear();
+    io::stdin().read_line(&mut buf).expect("Failed to read line");
+    let max: u32 = match buf.trim().parse() {
+        Ok(n) if n > min => n,
+        _ => {
+            println!("{}", col(RED, "❌ Invalid maximum – must be a whole number greater than the minimum."));
+            return None;
+        }
+    };
+
+    println!("🎨 Custom range set: {} – {}", col(CYAN, min), col(CYAN, max));
+    Some((min, max))
+}
+
+fn load_leaderboards() -> HashMap<Difficulty, Vec<(String, u32, u32, u64)>> {
+    let mut map: HashMap<Difficulty, Vec<(String, u32, u32, u64)>> = HashMap::new();
     for diff in [Difficulty::Easy, Difficulty::Medium, Difficulty::Hard, Difficulty::Insane] {
         map.insert(diff, Vec::new());
     }
@@ -748,48 +1013,54 @@ fn load_leaderboards() -> HashMap<Difficulty, Vec<(String, u32)>> {
             let line = line.trim();
             if line.is_empty() { continue; }
             let parts: Vec<&str> = line.split('|').collect();
-            if parts.len() == 3 {
+            if parts.len() >= 3 {
                 let diff = match parts[0] {
-                    "Easy" => Difficulty::Easy,
+                    "Easy"   => Difficulty::Easy,
                     "Medium" => Difficulty::Medium,
-                    "Hard" => Difficulty::Hard,
+                    "Hard"   => Difficulty::Hard,
                     "Insane" => Difficulty::Insane,
                     _ => continue,
                 };
                 let name = parts[1].to_string();
                 if let Ok(attempts) = parts[2].parse::<u32>() {
-                    map.entry(diff).or_insert_with(Vec::new).push((name, attempts));
+                    // Backward-compatible: hints and time default to 0 if absent.
+                    let hints = parts.get(3).and_then(|s| s.parse().ok()).unwrap_or(0u32);
+                    let secs  = parts.get(4).and_then(|s| s.parse().ok()).unwrap_or(0u64);
+                    map.entry(diff).or_default().push((name, attempts, hints, secs));
                 }
             }
         }
     }
 
     for vec in map.values_mut() {
-        vec.sort_by_key(|e| e.1);
-        vec.truncate(5); // Top 5 instead of top 3
+        vec.sort_by_key(|e| e.1); // sort by attempts (ascending)
+        vec.truncate(5);
     }
 
     map
 }
 
-fn save_leaderboards(leaderboards: &HashMap<Difficulty, Vec<(String, u32)>>) {
+fn save_leaderboards(leaderboards: &HashMap<Difficulty, Vec<(String, u32, u32, u64)>>) {
     let mut content = String::new();
     for (&diff, board) in leaderboards {
+        if diff.is_custom() { continue; }
         let diff_name = diff.name();
-        for (name, attempts) in board {
-            content.push_str(&format!("{}|{}|{}\n", diff_name, name, attempts));
+        for (name, attempts, hints, secs) in board {
+            content.push_str(&format!("{}|{}|{}|{}|{}\n", diff_name, name, attempts, hints, secs));
         }
     }
     let _ = fs::write("leaderboard.txt", content);
 }
 
 fn update_leaderboard(
-    leaderboards: &mut HashMap<Difficulty, Vec<(String, u32)>>,
+    leaderboards: &mut HashMap<Difficulty, Vec<(String, u32, u32, u64)>>,
     difficulty: Difficulty,
     attempts: u32,
+    hints_used: u32,
+    elapsed_secs: u64,
 ) {
-    let board = leaderboards.entry(difficulty).or_insert_with(Vec::new);
-    let max_entries = 5; // Top 5 instead of top 3
+    let board = leaderboards.entry(difficulty).or_default();
+    let max_entries = 5;
 
     let threshold = if board.len() < max_entries {
         u32::MAX
@@ -798,25 +1069,26 @@ fn update_leaderboard(
     };
 
     if board.len() < max_entries || attempts <= threshold {
-        print!("\n🌟 NEW TOP-5 SCORE on {}! Enter your name: ", difficulty.name());
+        print!("\n{} Enter your name: ",
+            col(YELLOW, format!("🌟 NEW TOP-5 SCORE on {}!", difficulty.name())));
         io::stdout().flush().expect("Failed to flush stdout");
 
         let mut name = String::new();
         io::stdin().read_line(&mut name).expect("Failed to read name");
         let name = name.trim();
-        let name = if name.is_empty() { 
-            "Anonymous".to_string() 
-        } else { 
-            name.chars().take(20).collect() // Limit name length
+        let name: String = if name.is_empty() {
+            "Anonymous".to_string()
+        } else {
+            name.chars().take(20).collect()
         };
 
-        board.push((name.clone(), attempts));
+        board.push((name.clone(), attempts, hints_used, elapsed_secs));
         board.sort_by_key(|e| e.1);
         board.truncate(max_entries);
 
         save_leaderboards(leaderboards);
         
-        println!("✅ {} has been added to the {} leaderboard!", name, difficulty.name());
+        println!("{}", col(GREEN, format!("✅ {} has been added to the {} leaderboard!", name, difficulty.name())));
     } else {
         println!("\n👍 Solid effort! You needed {} attempts to beat the top-5 on {}.", 
             threshold, 
@@ -825,38 +1097,49 @@ fn update_leaderboard(
     }
 }
 
-fn display_leaderboards(leaderboards: &HashMap<Difficulty, Vec<(String, u32)>>) {
-    println!("\n{}", "═".repeat(60));
-    println!("🏅 LEADERBOARDS – Top 5 Lowest Attempts Per Difficulty 🏅");
-    println!("{}", "═".repeat(60));
+fn display_leaderboards(leaderboards: &HashMap<Difficulty, Vec<(String, u32, u32, u64)>>) {
+    println!("\n{}", col(BOLD, "═".repeat(60)));
+    println!("{}", col(BOLD, "🏅 LEADERBOARDS – Top 5 Lowest Attempts Per Difficulty 🏅"));
+    println!("{}", col(BOLD, "═".repeat(60)));
     
     for &diff in &[Difficulty::Easy, Difficulty::Medium, Difficulty::Hard, Difficulty::Insane] {
         let (_, upper) = diff.range();
-        println!("\n{} {} (1–{}):", diff.emoji(), diff.name(), upper);
+        println!("\n{} {} (1–{}):", diff.emoji(), col(BOLD, diff.name()), upper);
         let board = leaderboards.get(&diff).unwrap();
         
         if board.is_empty() {
             println!("   💤 No entries yet – be the first legend!");
         } else {
-            for (rank, (name, attempts)) in board.iter().enumerate() {
+            for (rank, (name, attempts, hints, secs)) in board.iter().enumerate() {
                 let medal = match rank {
                     0 => "🥇",
                     1 => "🥈",
                     2 => "🥉",
                     _ => "  ",
                 };
+                let time_str = if *secs > 0 {
+                    format!("  ⏱ {}", format_duration(*secs))
+                } else {
+                    String::new()
+                };
+                let hints_str = if *hints > 0 {
+                    format!("  💡 {}h", hints)
+                } else {
+                    String::new()
+                };
                 println!(
-                    "   {} {}. {:<20} – {} attempt{}",
+                    "   {} {}. {:<20} – {}{}{}",
                     medal,
                     rank + 1,
                     name,
-                    attempts,
-                    if *attempts == 1 { "" } else { "s" }
+                    col(CYAN, format!("{} attempt{}", attempts, if *attempts == 1 { "" } else { "s" })),
+                    time_str,
+                    hints_str,
                 );
             }
         }
     }
-    println!("\n{}", "═".repeat(60));
+    println!("\n{}", col(BOLD, "═".repeat(60)));
 }
 
 fn ask_play_again() -> bool {
