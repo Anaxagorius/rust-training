@@ -65,6 +65,13 @@ impl Roaster {
     }
 }
 
+// ── Game Mode ─────────────────────────────────────────────────────────────────
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
+enum GameMode {
+    GuessingGame,
+    Hangman,
+}
+
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 enum Difficulty {
     Easy,
@@ -127,6 +134,26 @@ const BAD_WORDS: &[&str] = &[
     "fuck", "shit", "cunt", "bastard", "bellend", "wanker", "piss", "asshole", "dick",
 ];
 
+const HANGMAN_WORDS: &[&str] = &[
+    // culinary / kitchen
+    "spatula", "saffron", "risotto", "sourdough", "baguette", "fondue",
+    "blanched", "flambe", "julienne", "consomme", "marinade", "sauteed",
+    // music
+    "rhythm", "melody", "symphony", "acoustic", "harmony", "ballad",
+    "crescendo", "soprano", "treble",
+    // gaming
+    "respawn", "dungeon", "inventory", "joystick", "checkpoint", "polygon",
+    // fashion
+    "couture", "runway", "glamour", "wardrobe", "boutique", "sequin",
+    "cashmere", "cravat",
+    // general fun
+    "avalanche", "blizzard", "jukebox", "kazoo", "fjord", "sphinx",
+    "waltz", "cryptic", "phantom", "zephyr", "trophy", "zombie",
+    "whirlpool", "vortex", "quartz", "oxygen", "eclipse", "labyrinth",
+    "swagger", "bamboozle", "flabbergast", "gobsmacked", "kerfuffle",
+    "shenanigan", "brouhaha", "hullabaloo", "rambunctious", "flummox",
+];
+
 // ── Achievement System ─────────────────────────────────────────────────────────
 #[derive(Debug, PartialEq, Clone)]
 enum Achievement {
@@ -146,6 +173,10 @@ enum Achievement {
     Persistent,
     /// First-try win on Hard or Insane.
     Perfectionist,
+    /// Solved a hangman word with no wrong guesses.
+    HangmanFlawless,
+    /// Won hangman with exactly 5 wrong guesses (one life remaining).
+    NarrowEscape,
 }
 
 impl Achievement {
@@ -159,6 +190,8 @@ impl Achievement {
             Achievement::LuckyNumber => "🍀",
             Achievement::Persistent  => "🔄",
             Achievement::Perfectionist => "💎",
+            Achievement::HangmanFlawless => "📖",
+            Achievement::NarrowEscape    => "😰",
         }
     }
 
@@ -172,6 +205,8 @@ impl Achievement {
             Achievement::LuckyNumber => "Lucky Number 7",
             Achievement::Persistent  => "Persistent",
             Achievement::Perfectionist => "Perfectionist",
+            Achievement::HangmanFlawless => "Flawless Vocabulary",
+            Achievement::NarrowEscape    => "Narrow Escape",
         }
     }
 
@@ -185,13 +220,16 @@ impl Achievement {
             Achievement::LuckyNumber => "Won with a guess ending in the digit 7",
             Achievement::Persistent  => "Played 5 or more rounds in one session",
             Achievement::Perfectionist => "First-try win on Hard or Insane difficulty",
+            Achievement::HangmanFlawless => "Solved a hangman word without any wrong guesses",
+            Achievement::NarrowEscape    => "Won hangman with only one guess remaining",
         }
     }
 }
 
 fn main() {
     print_banner();
-    
+
+    let game_mode = ask_game_mode();
     let roaster = ask_roaster();
     print_roaster_intro(roaster);
 
@@ -203,80 +241,138 @@ fn main() {
     }
 
     let mut leaderboards = load_leaderboards();
-    let mut total_games   = 0u32;
-    let mut total_attempts = 0u32;
-    let mut total_secs    = 0u64;
     let mut session_achievements: Vec<Achievement> = Vec::new();
 
+    // Shared counters
+    let mut total_games = 0u32;
+    let mut total_secs  = 0u64;
+
+    // Guessing-game stats
+    let mut total_attempts = 0u32;
+
+    // Hangman stats
+    let mut total_wins  = 0u32;
+    let mut total_wrong = 0u32;
+
     loop {
-        let difficulty = ask_difficulty();
-        let (attempts, guesses, elapsed_secs, hints_used) =
-            play_round(difficulty, roaster, profane);
+        match game_mode {
+            GameMode::GuessingGame => {
+                let difficulty = ask_difficulty();
+                let (attempts, guesses, elapsed_secs, hints_used) =
+                    play_round(difficulty, roaster, profane);
 
-        total_games   += 1;
-        total_attempts += attempts;
-        total_secs    += elapsed_secs;
+                total_games    += 1;
+                total_attempts += attempts;
+                total_secs     += elapsed_secs;
 
-        // ── Collect achievements ───────────────────────────────────────────
-        let mut new_achievements: Vec<Achievement> = Vec::new();
+                // ── Collect achievements ───────────────────────────────────────
+                let mut new_achievements: Vec<Achievement> = Vec::new();
 
-        if attempts == 1 {
-            new_achievements.push(Achievement::FirstTry);
-        }
-        if attempts <= 3 {
-            new_achievements.push(Achievement::SpeedDemon);
-        }
-        if difficulty == Difficulty::Insane {
-            new_achievements.push(Achievement::Insaniac);
-        }
-        if hints_used == 0 {
-            new_achievements.push(Achievement::NoHints);
-        }
-        if hints_used >= 3 {
-            new_achievements.push(Achievement::HintAddict);
-        }
-        if let Some(&last_guess) = guesses.last() {
-            if last_guess % 10 == 7 {
-                new_achievements.push(Achievement::LuckyNumber);
-            }
-        }
-        if total_games >= 5 && !session_achievements.contains(&Achievement::Persistent) {
-            new_achievements.push(Achievement::Persistent);
-        }
-        if attempts == 1 && matches!(difficulty, Difficulty::Hard | Difficulty::Insane) {
-            new_achievements.push(Achievement::Perfectionist);
-        }
+                if attempts == 1 {
+                    new_achievements.push(Achievement::FirstTry);
+                }
+                if attempts <= 3 {
+                    new_achievements.push(Achievement::SpeedDemon);
+                }
+                if difficulty == Difficulty::Insane {
+                    new_achievements.push(Achievement::Insaniac);
+                }
+                if hints_used == 0 {
+                    new_achievements.push(Achievement::NoHints);
+                }
+                if hints_used >= 3 {
+                    new_achievements.push(Achievement::HintAddict);
+                }
+                if let Some(&last_guess) = guesses.last() {
+                    if last_guess % 10 == 7 {
+                        new_achievements.push(Achievement::LuckyNumber);
+                    }
+                }
+                if total_games >= 5 && !session_achievements.contains(&Achievement::Persistent) {
+                    new_achievements.push(Achievement::Persistent);
+                }
+                if attempts == 1 && matches!(difficulty, Difficulty::Hard | Difficulty::Insane) {
+                    new_achievements.push(Achievement::Perfectionist);
+                }
 
-        // Only surface each achievement once per session.
-        for ach in new_achievements {
-            if !session_achievements.contains(&ach) {
-                println!("\n{} {} {}: {}",
-                    col(YELLOW, "🏅 ACHIEVEMENT UNLOCKED:"),
-                    ach.emoji(),
-                    col(BOLD, ach.title()),
-                    ach.description()
+                // Only surface each achievement once per session.
+                for ach in new_achievements {
+                    if !session_achievements.contains(&ach) {
+                        println!("\n{} {} {}: {}",
+                            col(YELLOW, "🏅 ACHIEVEMENT UNLOCKED:"),
+                            ach.emoji(),
+                            col(BOLD, ach.title()),
+                            ach.description()
+                        );
+                        session_achievements.push(ach);
+                    }
+                }
+
+                print_win_stats(attempts, &guesses, elapsed_secs, hints_used);
+
+                if !difficulty.is_custom() {
+                    update_leaderboard(&mut leaderboards, difficulty, attempts, hints_used, elapsed_secs);
+                    display_leaderboards(&leaderboards);
+                } else {
+                    println!("\n{}", col(CYAN, "ℹ️  Custom difficulty rounds are not tracked on the leaderboard."));
+                }
+
+                let avg_secs = if total_games > 0 { total_secs / total_games as u64 } else { 0 };
+                println!("\n{} {} game{} played  │  {:.1} avg attempts  │  {} avg time/round",
+                    col(CYAN, "📊 Session:"),
+                    total_games,
+                    if total_games == 1 { "" } else { "s" },
+                    total_attempts as f32 / total_games as f32,
+                    format_duration(avg_secs),
                 );
-                session_achievements.push(ach);
+            }
+
+            GameMode::Hangman => {
+                let (won, wrong_guesses, elapsed_secs) = play_hangman(roaster, profane);
+
+                total_games += 1;
+                total_secs  += elapsed_secs;
+                total_wrong += wrong_guesses;
+                if won { total_wins += 1; }
+
+                // ── Hangman achievements ───────────────────────────────────────
+                let mut new_achievements: Vec<Achievement> = Vec::new();
+
+                if won && wrong_guesses == 0 {
+                    new_achievements.push(Achievement::HangmanFlawless);
+                }
+                if won && wrong_guesses == 5 {
+                    new_achievements.push(Achievement::NarrowEscape);
+                }
+                if total_games >= 5 && !session_achievements.contains(&Achievement::Persistent) {
+                    new_achievements.push(Achievement::Persistent);
+                }
+
+                for ach in new_achievements {
+                    if !session_achievements.contains(&ach) {
+                        println!("\n{} {} {}: {}",
+                            col(YELLOW, "🏅 ACHIEVEMENT UNLOCKED:"),
+                            ach.emoji(),
+                            col(BOLD, ach.title()),
+                            ach.description()
+                        );
+                        session_achievements.push(ach);
+                    }
+                }
+
+                let avg_secs  = if total_games > 0 { total_secs / total_games as u64 } else { 0 };
+                let avg_wrong = if total_games > 0 { total_wrong as f32 / total_games as f32 } else { 0.0 };
+                println!("\n{} {} game{} played  │  {} win{}  │  {:.1} avg wrong guesses  │  {} avg time/round",
+                    col(CYAN, "📊 Session:"),
+                    total_games,
+                    if total_games == 1 { "" } else { "s" },
+                    total_wins,
+                    if total_wins == 1 { "" } else { "s" },
+                    avg_wrong,
+                    format_duration(avg_secs),
+                );
             }
         }
-
-        print_win_stats(attempts, &guesses, elapsed_secs, hints_used);
-
-        if !difficulty.is_custom() {
-            update_leaderboard(&mut leaderboards, difficulty, attempts, hints_used, elapsed_secs);
-            display_leaderboards(&leaderboards);
-        } else {
-            println!("\n{}", col(CYAN, "ℹ️  Custom difficulty rounds are not tracked on the leaderboard."));
-        }
-
-        let avg_secs = if total_games > 0 { total_secs / total_games as u64 } else { 0 };
-        println!("\n{} {} game{} played  │  {:.1} avg attempts  │  {} avg time/round",
-            col(CYAN, "📊 Session:"),
-            total_games,
-            if total_games == 1 { "" } else { "s" },
-            total_attempts as f32 / total_games as f32,
-            format_duration(avg_secs),
-        );
 
         if !session_achievements.is_empty() {
             println!("{} {}", col(YELLOW, "🏅 Achievements this session:"),
@@ -298,16 +394,19 @@ fn main() {
 
 fn print_banner() {
     println!("{}", col(CYAN, "=".repeat(60)));
-    println!("{}", col(BOLD, "🎲  ULTRA GUESSING GAME v3.0 – Now with Achievements & Hints  🎲"));
+    println!("{}", col(BOLD, "🎲  ULTRA GAME SUITE v4.0 – Guessing Game & Hangman  🎲"));
     println!("{}", col(CYAN, "=".repeat(60)));
+    println!("Games:");
+    println!("  🎲 Number Guessing Game – Guess the secret number!");
+    println!("  💀 Hangman              – Guess the hidden word letter by letter!");
     println!("Features:");
     println!("  ✨ 10 unique roasters with personality");
-    println!("  🏆 Persistent leaderboards across 4 difficulties");
+    println!("  🏆 Persistent leaderboards across 4 difficulties (guessing game)");
     println!("  🌡️  Warmth hints (getting warmer/colder)");
     println!("  🔥 Optional profanity mode");
     println!("  📊 Session statistics tracking");
     println!("  💡 In-round hint system (type {} for a clue!)", col(YELLOW, "'h'"));
-    println!("  🏅 Achievement system – 8 badges to unlock");
+    println!("  🏅 Achievement system – 10 badges to unlock");
     println!("  ⏱️  Per-round timer");
     println!("  🎨 Custom difficulty – define your own number range\n");
 }
@@ -1155,5 +1254,339 @@ fn ask_play_again() -> bool {
             "n" | "no" => return false,
             _ => println!("❌ Just y or n, please!"),
         }
+    }
+}
+
+// ── Game Mode Selection ───────────────────────────────────────────────────────
+fn ask_game_mode() -> GameMode {
+    println!("\n🎮 Choose your game:\n");
+    println!("  1. 🎲 Number Guessing Game – Guess the secret number with roaster commentary!");
+    println!("  2. 💀 Hangman              – Guess the hidden word letter by letter!");
+    loop {
+        print!("\n🎯 Your choice (1-2): ");
+        io::stdout().flush().expect("Failed to flush stdout");
+
+        let mut input = String::new();
+        io::stdin().read_line(&mut input).expect("Failed to read line");
+
+        match input.trim() {
+            "1" => return GameMode::GuessingGame,
+            "2" => return GameMode::Hangman,
+            _   => println!("{}", col(RED, "❌ Please enter 1 or 2.\n")),
+        }
+    }
+}
+
+// ── Hangman ───────────────────────────────────────────────────────────────────
+
+fn hangman_art(wrong: usize) -> &'static str {
+    match wrong {
+        0 => "  +---+\n  |   |\n      |\n      |\n      |\n      |\n=========",
+        1 => "  +---+\n  |   |\n  O   |\n      |\n      |\n      |\n=========",
+        2 => "  +---+\n  |   |\n  O   |\n  |   |\n      |\n      |\n=========",
+        3 => "  +---+\n  |   |\n  O   |\n /|   |\n      |\n      |\n=========",
+        4 => "  +---+\n  |   |\n  O   |\n /|\\  |\n      |\n      |\n=========",
+        5 => "  +---+\n  |   |\n  O   |\n /|\\  |\n /    |\n      |\n=========",
+        _ => "  +---+\n  |   |\n  O   |\n /|\\  |\n / \\  |\n      |\n=========",
+    }
+}
+
+/// Returns (wrong_jibes, win_message, loss_message) for the chosen roaster.
+fn hangman_roaster_jibes(roaster: Roaster) -> (Vec<String>, &'static str, &'static str) {
+    match roaster {
+        Roaster::Ramsay => (
+            vec![
+                "Wrong letter, you absolute donut!",
+                "Not in there! You idiot sandwich!",
+                "Wrong! My dead gran could do better!",
+                "That letter? Really, you muppet?!",
+                "Bloody hell, that's wrong! Try harder!",
+                "Not it! You useless panini head!",
+                "Wrong letter – you're embarrassing yourself!",
+                "That's not in the word, you plonker!",
+                "Pathetic! Absolutely pathetic!",
+                "Wrong! You absolute bellend!",
+                "Not in there, you stupid donut!",
+                "Blimey, wrong again! Are you even trying?!",
+            ].into_iter().map(String::from).collect(),
+            "🎯 You got the word! Finally, you donut – I'm almost impressed!",
+            "💀 HANGED! That word slaughtered you! Absolutely disgraceful!",
+        ),
+        Roaster::UncleRoger => (
+            vec![
+                "Haiyaa! Wrong letter! So weak!",
+                "Aiyo! Not that letter lah!",
+                "Haiyaa! You guess like Jamie Oliver spell!",
+                "Wrong! Emotionally damage Uncle Roger!",
+                "Aiyo! That letter not even close!",
+                "Haiyaa! So wrong, cannot take!",
+                "Wrong letter! You make Uncle Roger cry!",
+                "Aiyo! Even children spell better!",
+                "Haiyaa! No MSG in your brain ah?",
+                "Wrong! Uncle Roger very disappointed!",
+                "Aiyah! That letter useless lah!",
+            ].into_iter().map(String::from).collect(),
+            "🎯 Fuiyoh! You got the word! Uncle Roger so proud! MSG approved!",
+            "💀 Haiyaa! You got hanged! So embarrassing! Uncle Roger faint already!",
+        ),
+        Roaster::RickAstley => (
+            vec![
+                "Wrong! Never gonna give you the right letter!",
+                "Not it! You've known the rules – try again!",
+                "Never gonna let you guess wrong... oh wait, you just did!",
+                "Wrong letter! A full commitment you're failing!",
+                "Never gonna make you cry... but wrong!",
+                "That letter's never gonna be in there!",
+                "Wrong! Never gonna run around with correct guesses!",
+                "You've known the rules – that letter's not it!",
+                "Never gonna give that letter up? Well I am – it's wrong!",
+                "Never gonna tell a lie: that's wrong!",
+            ].into_iter().map(String::from).collect(),
+            "🎯 Never gonna give you up – you got the word! Well played!",
+            "💀 Never gonna let you win... and I didn't! You've been hanged!",
+        ),
+        Roaster::SimonCowell => (
+            vec![
+                "Wrong. Absolutely dreadful.",
+                "That letter isn't there. It's a no from me.",
+                "Wrong. I'm not even surprised anymore.",
+                "Dreadful. That was truly dreadful.",
+                "Not in the word. Terrible effort.",
+                "Wrong. One of the worst guesses I've ever seen.",
+                "No. Just no.",
+                "That letter? Really? Awful.",
+                "Wrong. I didn't like it at all.",
+                "Not there. Honestly, it's embarrassing.",
+                "Wrong letter. Ghastly.",
+            ].into_iter().map(String::from).collect(),
+            "🎯 Well done. That was actually... not bad. I'm mildly impressed.",
+            "💀 Hanged. I knew you'd fail. Utterly predictable.",
+        ),
+        Roaster::NikkiGlaser => (
+            vec![
+                "Wrong letter! That's embarrassing, babe.",
+                "Not in the word! Come on, seriously?",
+                "Wrong! That's giving desperate energy.",
+                "Babe, no. That letter isn't there.",
+                "Wrong! That's so cringe.",
+                "Not it! You're struggling and it's painful to watch.",
+                "Wrong letter. I'm secondhand embarrassed.",
+                "That letter? Really? You okay?",
+                "Wrong! This is awkward for all of us.",
+                "Not in there! Try harder, babe.",
+                "Wrong! Fucking embarrassing.",
+            ].into_iter().map(String::from).collect(),
+            "🎯 Yes! You got it! See, you can do things right! Proud of you, babe!",
+            "💀 Hanged! I can't even. That was rough to watch. Yikes.",
+        ),
+        Roaster::JoanRivers => (
+            vec![
+                "Wrong letter! Can we talk? That was hideous.",
+                "Not in the word! Oh honey, no.",
+                "Wrong! That guess looks like my last marriage – a disaster.",
+                "Darling, that letter isn't there. Tragic.",
+                "Wrong! Who taught you the alphabet?",
+                "Not it! That was atrocious, darling.",
+                "Wrong letter! I've seen better spelling from my Chihuahua.",
+                "Can we talk? That's just awful.",
+                "Wrong! You look ridiculous guessing that.",
+                "Not in the word! Darling, it's giving disaster.",
+                "Wrong! Honey, that's a crime against letters.",
+            ].into_iter().map(String::from).collect(),
+            "🎯 Oh darling, you got it! Fabulous! Simply divine! I'm speechless!",
+            "💀 Hanged! Oh honey, what a tragedy. Tragic, just tragic.",
+        ),
+        Roaster::CaseOh => (
+            vec![
+                "CHAT! Wrong letter! This person is TROLLING!",
+                "Bro, that's wrong! CHAT, spam L's!",
+                "Not in the word! You're cooked bro!",
+                "CHAT CHAT! Wrong again! This is embarrassing!",
+                "Wrong letter! I'm stress eating over this!",
+                "Bro, that letter? CHAT is cringing!",
+                "WHAT?! Wrong! You're making me malding!",
+                "Not it! Bro needs help! CHAT, pray for them!",
+                "Wrong letter! That's an L! Ratio!",
+                "CHAT! They're griefing me! Wrong again!",
+                "Bro really guessed that! Wrong! L + ratio + get rekt!",
+                "Not in the word! This is content I guess!",
+            ].into_iter().map(String::from).collect(),
+            "🎯 YOOOOO! CHAT! THEY GOT THE WORD! GG! That was actually fire bro!",
+            "💀 CHAT! THEY GOT HANGED! OMFG! L + ratio + get good! Better luck next time bro!",
+        ),
+        Roaster::GenX => (
+            vec![
+                "Wrong. Whatever.",
+                "Not in there. Not that I care.",
+                "Wrong letter. This is lame anyway.",
+                "That's not it. As if.",
+                "Wrong. Gag me with a spoon.",
+                "Not in the word. Whatever, try again I guess.",
+                "Wrong. This is so bogus.",
+                "That letter's not there. Talk to the hand.",
+                "Wrong. Not that it matters.",
+                "Not it. Psych!",
+                "Wrong. Don't have a cow, just try again.",
+            ].into_iter().map(String::from).collect(),
+            "🎯 You got it. Cool, I guess. Whatever, it's fine.",
+            "💀 Hanged. As if. That's what happens when you don't pay attention.",
+        ),
+        Roaster::Millennial => (
+            vec![
+                "Wrong letter bestie! That's not giving what it needs to give!",
+                "OMG wrong! I'm literally dying! Not that letter!",
+                "Not in the word! This is NOT the vibe!",
+                "Bestie... wrong letter. I can't even.",
+                "Wrong! That's so cringe! Try again!",
+                "Oof, wrong! That hit different (badly).",
+                "Wrong letter! Periodt! Keep trying bestie!",
+                "No cap that's wrong! Come on!",
+                "Not it! That's giving broke millennial energy!",
+                "Wrong! I'm having an existential crisis over this!",
+                "Bestie that's wrong! Slay somewhere else!",
+                "Wrong letter! My anxiety cannot handle this!",
+            ].into_iter().map(String::from).collect(),
+            "🎯 YASSS QUEEN! You got the word! I'm SO proud! That's literally iconic! 💅",
+            "💀 You got HANGED bestie! I'm literally shaking! We don't talk about this. 😭",
+        ),
+        Roaster::GenZ => (
+            vec![
+                "Wrong letter bestie! That's giving L energy fr!",
+                "Nah that's wrong! No cap, try again!",
+                "Not in the word! You're cooked fr fr!",
+                "Bro that's mid and wrong! Come on!",
+                "Wrong! That's not bussin!",
+                "Low key wrong! High key embarrassing!",
+                "Wrong letter! Deadass, try again!",
+                "That ain't it bestie! Wrong!",
+                "Not it! This ain't giving! Try harder fr!",
+                "Nah bro, wrong! Periodt!",
+                "Wrong! Bro fell off! Try again!",
+                "That's cap! Wrong letter! Come on bestie!",
+                "Wrong! You're tweaking fr!",
+                "Not in the word! Ratio + L + wrong!",
+            ].into_iter().map(String::from).collect(),
+            "🎯 YOOO YOU ATE THAT WORD UP! No cap that was bussin! Purr bestie! 💅💀",
+            "💀 YOU GOT HANGED! You are so cooked fr fr! Massive L bestie! 💀💀",
+        ),
+    }
+}
+
+/// Play a round of Hangman.  Returns (won, wrong_guesses, elapsed_secs).
+fn play_hangman(roaster: Roaster, profane: bool) -> (bool, u32, u64) {
+    let word = HANGMAN_WORDS[rand::thread_rng().gen_range(0..HANGMAN_WORDS.len())];
+    let word_upper: Vec<char> = word.to_uppercase().chars().collect();
+    let word_len = word_upper.len();
+
+    let mut guessed: Vec<char> = Vec::new();
+    let mut wrong_guesses = 0u32;
+    let max_wrong = 6u32;
+    let round_start = Instant::now();
+
+    let (mut wrong_jibes, win_message, loss_message) = hangman_roaster_jibes(roaster);
+
+    // Apply profanity filter to jibes
+    if !profane {
+        wrong_jibes = wrong_jibes
+            .into_iter()
+            .filter(|j| !BAD_WORDS.iter().any(|&w| j.to_lowercase().contains(w)))
+            .collect();
+        if wrong_jibes.is_empty() {
+            wrong_jibes.push(String::from("Wrong letter! Try again."));
+        }
+    }
+
+    println!("\n{} {} – Guess the {}-letter word!",
+        col(BOLD, "💀 HANGMAN"),
+        col(CYAN, roaster.name()),
+        col(YELLOW, word_len.to_string()),
+    );
+    println!("You have {} wrong guesses before you're hanged!\n",
+        col(RED, max_wrong.to_string()));
+
+    loop {
+        // Display current hangman art
+        println!("{}", col(CYAN, hangman_art(wrong_guesses as usize)));
+
+        // Word display
+        let display: String = word_upper
+            .iter()
+            .map(|c| if guessed.contains(c) { c.to_string() } else { "_".to_string() })
+            .collect::<Vec<_>>()
+            .join(" ");
+        println!("\n📝 Word: {}", col(BOLD, &display));
+
+        // Guessed letters (sorted)
+        if !guessed.is_empty() {
+            let mut sorted = guessed.clone();
+            sorted.sort_unstable();
+            let guessed_str: String = sorted.iter()
+                .map(|c| c.to_string())
+                .collect::<Vec<_>>()
+                .join(", ");
+            println!("🔤 Letters guessed: {}", col(MAGENTA, &guessed_str));
+        }
+
+        println!("❌ Wrong guesses: {}/{}\n", wrong_guesses, max_wrong);
+
+        // Check win condition
+        if word_upper.iter().all(|c| guessed.contains(c)) {
+            let elapsed = round_start.elapsed().as_secs();
+            println!("{}", col(GREEN, win_message));
+            println!("✅ The word was: {}\n", col(YELLOW, &word.to_uppercase()));
+            return (true, wrong_guesses, elapsed);
+        }
+
+        // Check loss condition
+        if wrong_guesses >= max_wrong {
+            let elapsed = round_start.elapsed().as_secs();
+            println!("{}", col(RED, loss_message));
+            println!("💀 The word was: {}\n", col(YELLOW, &word.to_uppercase()));
+            return (false, wrong_guesses, elapsed);
+        }
+
+        // Get player input
+        print!("🔤 Guess a letter: ");
+        io::stdout().flush().expect("Failed to flush stdout");
+
+        let mut input = String::new();
+        io::stdin()
+            .read_line(&mut input)
+            .expect("Failed to read line");
+        let trimmed = input.trim().to_uppercase();
+
+        let valid_letter = trimmed.len() == 1
+            && trimmed.chars().next().map(|c| c.is_ascii_alphabetic()).unwrap_or(false);
+        if !valid_letter {
+            println!("{}", col(RED, "❌ Please enter a single letter (A-Z)."));
+            continue;
+        }
+
+        let letter = trimmed.chars().next().unwrap();
+
+        if guessed.contains(&letter) {
+            println!("{}", col(YELLOW, format!("⚠️  You already guessed '{}' – try a different letter.", letter)));
+            continue;
+        }
+
+        guessed.push(letter);
+
+        if word_upper.contains(&letter) {
+            let count = word_upper.iter().filter(|&&c| c == letter).count();
+            println!("{}", col(GREEN, format!("✅ Nice! '{}' is in the word! ({} time{})",
+                letter, count, if count == 1 { "" } else { "s" })));
+        } else {
+            wrong_guesses += 1;
+            let jibe = &wrong_jibes[rand::thread_rng().gen_range(0..wrong_jibes.len())];
+            println!("{}", col(RED, format!("❌ '{}' is not in the word! {}", letter, jibe)));
+            if wrong_guesses < max_wrong {
+                println!("{} wrong guess{} used ({} remaining)",
+                    col(YELLOW, wrong_guesses.to_string()),
+                    if wrong_guesses == 1 { "" } else { "es" },
+                    max_wrong - wrong_guesses,
+                );
+            }
+        }
+        println!();
     }
 }
