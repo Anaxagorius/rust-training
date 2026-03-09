@@ -1,3 +1,5 @@
+mod minesweeper;
+
 use rand::Rng;
 use std::cmp::Ordering;
 use std::collections::HashMap;
@@ -71,6 +73,7 @@ enum GameMode {
     GuessingGame,
     Hangman,
     Wordle,
+    Minesweeper,
 }
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -208,6 +211,12 @@ enum Achievement {
     WordleGenius,
     /// Solved Wordle on the last possible guess (6th).
     WordleNarrowEscape,
+    /// Won any minesweeper game.
+    MinesweeperVictor,
+    /// Won minesweeper on Champion difficulty.
+    MinesweeperChampion,
+    /// Won minesweeper on Peasant difficulty in under 60 seconds.
+    MinesweeperSpeedrunner,
 }
 
 impl Achievement {
@@ -226,6 +235,9 @@ impl Achievement {
             Achievement::WordleFlawless  => "🟩",
             Achievement::WordleGenius    => "🧩",
             Achievement::WordleNarrowEscape => "😅",
+            Achievement::MinesweeperVictor      => "💣",
+            Achievement::MinesweeperChampion    => "⚔️",
+            Achievement::MinesweeperSpeedrunner => "🏃",
         }
     }
 
@@ -244,6 +256,9 @@ impl Achievement {
             Achievement::WordleFlawless  => "Wordle Psychic",
             Achievement::WordleGenius    => "Wordle Genius",
             Achievement::WordleNarrowEscape => "Last Word Standing",
+            Achievement::MinesweeperVictor      => "Mine Victor",
+            Achievement::MinesweeperChampion    => "Champion Cleared",
+            Achievement::MinesweeperSpeedrunner => "Speedrunner",
         }
     }
 
@@ -262,6 +277,9 @@ impl Achievement {
             Achievement::WordleFlawless  => "Solved the Wordle word on the very first guess",
             Achievement::WordleGenius    => "Solved Wordle in 3 guesses or fewer",
             Achievement::WordleNarrowEscape => "Solved Wordle on the 6th and final guess",
+            Achievement::MinesweeperVictor      => "Cleared a minesweeper board without hitting a trap",
+            Achievement::MinesweeperChampion    => "Won minesweeper on Champion difficulty",
+            Achievement::MinesweeperSpeedrunner => "Won Peasant minesweeper in under 60 seconds",
         }
     }
 }
@@ -458,6 +476,62 @@ fn main() {
                     format_duration(avg_secs),
                 );
             }
+
+            GameMode::Minesweeper => {
+                println!("\n{}", col(YELLOW, "💣 Launching Iron Age Minesweeper…"));
+                println!("{}", col(CYAN, "  (Use arrow keys to navigate, Space/Enter to reveal, F to flag, R to restart, Q to quit)"));
+                println!("{}", col(CYAN, "─".repeat(62)));
+
+                let (won, level, elapsed_secs) = play_minesweeper();
+
+                total_games += 1;
+                total_secs  += elapsed_secs;
+                if won { total_wins += 1; }
+
+                // ── Minesweeper achievements ───────────────────────────────────
+                let mut new_achievements: Vec<Achievement> = Vec::new();
+
+                if won {
+                    new_achievements.push(Achievement::MinesweeperVictor);
+                }
+                if won && level == minesweeper::board::Level::Champion {
+                    new_achievements.push(Achievement::MinesweeperChampion);
+                }
+                if won && level == minesweeper::board::Level::Peasant && elapsed_secs < 60 {
+                    new_achievements.push(Achievement::MinesweeperSpeedrunner);
+                }
+                if total_games >= 5 && !session_achievements.contains(&Achievement::Persistent) {
+                    new_achievements.push(Achievement::Persistent);
+                }
+
+                for ach in new_achievements {
+                    if !session_achievements.contains(&ach) {
+                        println!("\n{} {} {}: {}",
+                            col(YELLOW, "🏅 ACHIEVEMENT UNLOCKED:"),
+                            ach.emoji(),
+                            col(BOLD, ach.title()),
+                            ach.description()
+                        );
+                        session_achievements.push(ach);
+                    }
+                }
+
+                let result_str = if won {
+                    col(GREEN, format!("✅ Victory on {}!", level.name()))
+                } else {
+                    col(RED, "💥 Better luck next time!".to_string())
+                };
+                let avg_secs = if total_games > 0 { total_secs / total_games as u64 } else { 0 };
+                println!("\n{}  ⏱ {}  │  {} game{} played  │  {} win{}  │  {} avg time/round",
+                    result_str,
+                    format_duration(elapsed_secs),
+                    col(CYAN, total_games.to_string()),
+                    if total_games == 1 { "" } else { "s" },
+                    total_wins,
+                    if total_wins == 1 { "" } else { "s" },
+                    format_duration(avg_secs),
+                );
+            }
         }
 
         if !session_achievements.is_empty() {
@@ -480,10 +554,10 @@ fn main() {
 
 fn print_banner() {
     println!("{}", col(CYAN, "╔════════════════════════════════════════════════════════════╗"));
-    println!("{}", col(CYAN, "║") + &col(BOLD, "         🎮  ULTRA GAME SUITE v5.0 – HOME PAGE  🎮        ") + &col(CYAN, "║"));
+    println!("{}", col(CYAN, "║") + &col(BOLD, "         🎮  ULTRA GAME SUITE v6.0 – HOME PAGE  🎮        ") + &col(CYAN, "║"));
     println!("{}", col(CYAN, "╚════════════════════════════════════════════════════════════╝"));
     println!();
-    println!("{}", col(BOLD, "  🕹️  Choose from 3 exciting games:"));
+    println!("{}", col(BOLD, "  🕹️  Choose from 4 exciting games:"));
     println!();
     println!("  {} {}",
         col(YELLOW, "1."),
@@ -509,10 +583,18 @@ fn print_banner() {
     println!("     – 🟩 correct position  🟨 wrong position  ⬛ not in word");
     println!("     – Roaster commentary after every guess");
     println!();
+    println!("  {} {}",
+        col(YELLOW, "4."),
+        col(BOLD, "💣 Iron Age Minesweeper")
+    );
+    println!("     Navigate a cursed ruin and flag every goblin trap!");
+    println!("     – 3 difficulty levels: Peasant, Knight, Champion");
+    println!("     – Full TUI keyboard interface with Roman-numeral clues");
+    println!();
     println!("{}", col(BOLD, "  ✨ Features across all games:"));
     println!("     • 10 unique roasters with personality");
     println!("     • Optional profanity mode 🔞");
-    println!("     • 13 achievements to unlock 🏅");
+    println!("     • 16 achievements to unlock 🏅");
     println!("     • Per-round timer ⏱️");
     println!("     • Session statistics 📊");
     println!("{}", col(CYAN, "─".repeat(62)));
@@ -1372,8 +1454,9 @@ fn ask_game_mode() -> GameMode {
     println!("  1. 🎲 Number Guessing Game – Guess the secret number with roaster commentary!");
     println!("  2. 💀 Hangman              – Guess the hidden word letter by letter!");
     println!("  3. 🟩 Wordle               – Guess the 5-letter word in 6 tries!");
+    println!("  4. 💣 Iron Age Minesweeper – Clear the cursed ruins without hitting a trap!");
     loop {
-        print!("\n🎯 Your choice (1-3): ");
+        print!("\n🎯 Your choice (1-4): ");
         io::stdout().flush().expect("Failed to flush stdout");
 
         let mut input = String::new();
@@ -1383,7 +1466,8 @@ fn ask_game_mode() -> GameMode {
             "1" => return GameMode::GuessingGame,
             "2" => return GameMode::Hangman,
             "3" => return GameMode::Wordle,
-            _   => println!("{}", col(RED, "❌ Please enter 1, 2, or 3.\n")),
+            "4" => return GameMode::Minesweeper,
+            _   => println!("{}", col(RED, "❌ Please enter 1, 2, 3, or 4.\n")),
         }
     }
 }
@@ -2108,4 +2192,108 @@ fn play_wordle(roaster: Roaster, profane: bool) -> (bool, u32, u64) {
         }
         println!();
     }
+}
+
+// ── Minesweeper ───────────────────────────────────────────────────────────────
+
+/// Run a full minesweeper session (level-select → play → repeat until quit).
+/// Returns (won_at_least_once, last_level_played, total_elapsed_secs).
+fn play_minesweeper() -> (bool, minesweeper::board::Level, u64) {
+    use crossterm::{cursor, execute, terminal::{self, EnterAlternateScreen, LeaveAlternateScreen}};
+    use minesweeper::board::{Board, GameStatus, Level};
+    use minesweeper::display::{draw, draw_level_select, read_action, read_menu_action, InputAction, MenuAction};
+    use std::time::Instant;
+
+    let mut stdout = io::stdout();
+
+    // Enter alternate screen + raw mode for the TUI game.
+    let _ = execute!(stdout, EnterAlternateScreen, cursor::Hide);
+    let _ = terminal::enable_raw_mode();
+
+    let mut last_level = Level::Peasant;
+    let mut won_any = false;
+    let mut total_secs = 0u64;
+
+    'outer: loop {
+        // ── Level select ────────────────────────────────────────────────────
+        let levels = [Level::Peasant, Level::Knight, Level::Champion];
+        let mut selected = 0usize;
+
+        let level = loop {
+            let _ = draw_level_select(selected);
+            match read_menu_action().unwrap_or(MenuAction::Quit) {
+                MenuAction::Up => { if selected > 0 { selected -= 1; } }
+                MenuAction::Down => { if selected < levels.len() - 1 { selected += 1; } }
+                MenuAction::Select(idx) => {
+                    let actual = if idx == usize::MAX { selected } else { idx };
+                    if actual < levels.len() {
+                        break levels[actual];
+                    }
+                }
+                MenuAction::Quit => break 'outer,
+                MenuAction::None => {}
+            }
+        };
+
+        last_level = level;
+
+        // ── Play loop ───────────────────────────────────────────────────────
+        let mut board = Board::new(level);
+        let mut cursor_row = level.rows() / 2;
+        let mut cursor_col = level.cols() / 2;
+        let start = Instant::now();
+
+        let restart = loop {
+            let elapsed = start.elapsed().as_secs();
+            let _ = draw(&board, cursor_row, cursor_col, elapsed);
+
+            match read_action().unwrap_or(InputAction::Quit) {
+                InputAction::Move(dr, dc) => {
+                    cursor_row = (cursor_row as i32 + dr)
+                        .clamp(0, (board.rows - 1) as i32) as usize;
+                    cursor_col = (cursor_col as i32 + dc)
+                        .clamp(0, (board.cols - 1) as i32) as usize;
+                }
+                InputAction::Reveal => { board.reveal(cursor_row, cursor_col); }
+                InputAction::Flag   => { board.toggle_flag(cursor_row, cursor_col); }
+                InputAction::Restart => break true,
+                InputAction::Quit    => break false,
+                InputAction::None    => {}
+            }
+
+            if board.status != GameStatus::Playing {
+                let elapsed = start.elapsed().as_secs();
+                total_secs += elapsed;
+                if board.status == GameStatus::Won {
+                    won_any = true;
+                }
+                // Show final state until R or Q.
+                let _ = draw(&board, cursor_row, cursor_col, elapsed);
+                loop {
+                    match read_action().unwrap_or(InputAction::Quit) {
+                        InputAction::Restart => { break; }
+                        InputAction::Quit    => {
+                            // Restore terminal before returning.
+                            let _ = terminal::disable_raw_mode();
+                            let _ = execute!(io::stdout(), cursor::Show, LeaveAlternateScreen);
+                            return (won_any, last_level, total_secs);
+                        }
+                        _ => {}
+                    }
+                }
+                // User pressed R – go back to level select.
+                continue 'outer;
+            }
+        };
+
+        if !restart {
+            break 'outer;
+        }
+    }
+
+    // Restore the terminal before returning to the ultra game suite prompt.
+    let _ = terminal::disable_raw_mode();
+    let _ = execute!(io::stdout(), cursor::Show, LeaveAlternateScreen);
+
+    (won_any, last_level, total_secs)
 }
