@@ -1,0 +1,12 @@
+[package]
+name = "iron-age-minesweeper"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "minesweeper"
+path = "src/main.rs"
+
+[dependencies]
+rand = { workspace = true }
+crossterm = "0.27"
