@@ -1,3 +1,4 @@
+mod blackjack;
 mod checkers;
 mod chess;
 mod minesweeper;
@@ -39,6 +40,20 @@ enum Roaster {
 }
 
 impl Roaster {
+    fn index(&self) -> usize {
+        match self {
+            Roaster::Ramsay      => 0,
+            Roaster::UncleRoger  => 1,
+            Roaster::RickAstley  => 2,
+            Roaster::SimonCowell => 3,
+            Roaster::NikkiGlaser => 4,
+            Roaster::JoanRivers  => 5,
+            Roaster::CaseOh      => 6,
+            Roaster::GenX        => 7,
+            Roaster::Millennial  => 8,
+            Roaster::GenZ        => 9,
+        }
+    }
     fn name(&self) -> &'static str {
         match self {
             Roaster::Ramsay => "Gordon Ramsay",
@@ -80,6 +95,7 @@ enum GameMode {
     Checkers,
     Chess,
     TicTacToe,
+    Blackjack,
 }
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -239,6 +255,10 @@ enum Achievement {
     TicTacToeDraw,
     /// Beat the AI at Tic Tac Toe in the minimum 5 moves.
     TicTacToeFlawless,
+    /// Won at least one blackjack hand.
+    BlackjackVictor,
+    /// Dealt a natural blackjack (Ace + 10-value card on the first two cards).
+    BlackjackNatural,
 }
 
 impl Achievement {
@@ -268,6 +288,8 @@ impl Achievement {
             Achievement::TicTacToeVictor        => "✕",
             Achievement::TicTacToeDraw          => "🤝",
             Achievement::TicTacToeFlawless      => "⚡",
+            Achievement::BlackjackVictor        => "🃏",
+            Achievement::BlackjackNatural       => "🎰",
         }
     }
 
@@ -297,6 +319,8 @@ impl Achievement {
             Achievement::TicTacToeVictor        => "Tic Tac Toe Victor",
             Achievement::TicTacToeDraw          => "Stalemate Strategist",
             Achievement::TicTacToeFlawless      => "Five-Move Finisher",
+            Achievement::BlackjackVictor        => "Blackjack Victor",
+            Achievement::BlackjackNatural       => "Natural 21",
         }
     }
 
@@ -326,6 +350,8 @@ impl Achievement {
             Achievement::TicTacToeVictor        => "Defeated the AI opponent at Tic Tac Toe",
             Achievement::TicTacToeDraw          => "Forced a draw against the Tic Tac Toe AI",
             Achievement::TicTacToeFlawless      => "Won a Tic Tac Toe game in the minimum 5 moves",
+            Achievement::BlackjackVictor        => "Won at least one blackjack hand",
+            Achievement::BlackjackNatural       => "Dealt a natural blackjack (Ace + 10-value on first two cards)",
         }
     }
 }
@@ -744,6 +770,57 @@ fn main() {
                     format_duration(avg_secs),
                 );
             }
+
+            GameMode::Blackjack => {
+                let roaster_idx = roaster.index();
+                let (won, got_natural, elapsed_secs) =
+                    play_blackjack(roaster_idx, profane);
+
+                total_games += 1;
+                total_secs  += elapsed_secs;
+                if won { total_wins += 1; }
+
+                // ── Blackjack achievements ─────────────────────────────────
+                let mut new_achievements: Vec<Achievement> = Vec::new();
+
+                if won {
+                    new_achievements.push(Achievement::BlackjackVictor);
+                }
+                if got_natural {
+                    new_achievements.push(Achievement::BlackjackNatural);
+                }
+                if total_games >= 5 && !session_achievements.contains(&Achievement::Persistent) {
+                    new_achievements.push(Achievement::Persistent);
+                }
+
+                for ach in new_achievements {
+                    if !session_achievements.contains(&ach) {
+                        println!("\n{} {} {}: {}",
+                            col(YELLOW, "🏅 ACHIEVEMENT UNLOCKED:"),
+                            ach.emoji(),
+                            col(BOLD, ach.title()),
+                            ach.description()
+                        );
+                        session_achievements.push(ach);
+                    }
+                }
+
+                let result_str = if won {
+                    col(GREEN, "✅ You beat the dealer!".to_string())
+                } else {
+                    col(RED, "💥 Better luck next time!".to_string())
+                };
+                let avg_secs = if total_games > 0 { total_secs / total_games as u64 } else { 0 };
+                println!("\n{}  ⏱ {}  │  {} game{} played  │  {} win{}  │  {} avg time/round",
+                    result_str,
+                    format_duration(elapsed_secs),
+                    col(CYAN, total_games.to_string()),
+                    if total_games == 1 { "" } else { "s" },
+                    total_wins,
+                    if total_wins == 1 { "" } else { "s" },
+                    format_duration(avg_secs),
+                );
+            }
         }
 
         if !session_achievements.is_empty() {
@@ -766,10 +843,10 @@ fn main() {
 
 fn print_banner() {
     println!("{}", col(CYAN, "╔════════════════════════════════════════════════════════════╗"));
-    println!("{}", col(CYAN, "║") + &col(BOLD, "         🎮  ULTRA GAME SUITE v7.0 – HOME PAGE  🎮        ") + &col(CYAN, "║"));
+    println!("{}", col(CYAN, "║") + &col(BOLD, "         🎮  ULTRA GAME SUITE v8.0 – HOME PAGE  🎮        ") + &col(CYAN, "║"));
     println!("{}", col(CYAN, "╚════════════════════════════════════════════════════════════╝"));
     println!();
-    println!("{}", col(BOLD, "  🕹️  Choose from 6 exciting games:"));
+    println!("{}", col(BOLD, "  🕹️  Choose from 8 exciting games:"));
     println!();
     println!("  {} {}",
         col(YELLOW, "1."),
@@ -827,10 +904,18 @@ fn print_banner() {
     println!("     – Minimax AI opponent (80 % optimal + 20 % random to keep it fun)");
     println!("     – Full TUI keyboard interface");
     println!();
+    println!("  {} {}",
+        col(YELLOW, "8."),
+        col(BOLD, "🃏  Iron Age Blackjack")
+    );
+    println!("     Beat the dealer to 21 without going over!");
+    println!("     – Bet chips across multiple hands in a single session");
+    println!("     – Natural blackjack pays 3:2  │  Dealer hits to soft 17");
+    println!();
     println!("{}", col(BOLD, "  ✨ Features across all games:"));
     println!("     • 10 unique roasters with personality");
     println!("     • Optional profanity mode 🔞");
-    println!("     • 24 achievements to unlock 🏅");
+    println!("     • 26 achievements to unlock 🏅");
     println!("     • Per-round timer ⏱️");
     println!("     • Session statistics 📊");
     println!("{}", col(CYAN, "─".repeat(62)));
@@ -1694,8 +1779,9 @@ fn ask_game_mode() -> GameMode {
     println!("  5. ♟  Iron Age Checkers    – Outmanoeuvre the AI on the ancient board!");
     println!("  6. ♔  Iron Age Chess       – Face the AI on the 64-square battlefield!");
     println!("  7. ✕  Iron Age Tic Tac Toe – Outwit the AI on the classic 3×3 grid!");
+    println!("  8. 🃏 Iron Age Blackjack   – Beat the dealer to 21 without going over!");
     loop {
-        print!("\n🎯 Your choice (1-7): ");
+        print!("\n🎯 Your choice (1-8): ");
         io::stdout().flush().expect("Failed to flush stdout");
 
         let mut input = String::new();
@@ -1709,7 +1795,8 @@ fn ask_game_mode() -> GameMode {
             "5" => return GameMode::Checkers,
             "6" => return GameMode::Chess,
             "7" => return GameMode::TicTacToe,
-            _   => println!("{}", col(RED, "❌ Please enter 1, 2, 3, 4, 5, 6, or 7.\n")),
+            "8" => return GameMode::Blackjack,
+            _   => println!("{}", col(RED, "❌ Please enter 1, 2, 3, 4, 5, 6, 7, or 8.\n")),
         }
     }
 }
@@ -2836,4 +2923,11 @@ fn play_chess() -> (bool, u32, bool, u64) {
     let _ = execute!(io::stdout(), cursor::Show, LeaveAlternateScreen);
 
     (player_won, total_moves, ai_had_queen, total_secs)
+}
+
+// ── Blackjack ─────────────────────────────────────────────────────────────────
+
+/// Run a blackjack session.  Returns (won_at_least_once, got_natural_blackjack, elapsed_secs).
+fn play_blackjack(roaster_idx: usize, profane: bool) -> (bool, bool, u64) {
+    blackjack::play(roaster_idx, profane)
 }
