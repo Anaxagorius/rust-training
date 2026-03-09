@@ -1,6 +1,7 @@
 mod checkers;
 mod chess;
 mod minesweeper;
+mod tic_tac_toe;
 
 use rand::Rng;
 use std::cmp::Ordering;
@@ -78,6 +79,7 @@ enum GameMode {
     Minesweeper,
     Checkers,
     Chess,
+    TicTacToe,
 }
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -231,6 +233,12 @@ enum Achievement {
     ChessBlitz,
     /// Beat the AI at chess after it had a queen on the board.
     ChessQueenSlayer,
+    /// Beat the AI at Tic Tac Toe.
+    TicTacToeVictor,
+    /// Force a draw against the Tic Tac Toe AI.
+    TicTacToeDraw,
+    /// Beat the AI at Tic Tac Toe in the minimum 5 moves.
+    TicTacToeFlawless,
 }
 
 impl Achievement {
@@ -257,6 +265,9 @@ impl Achievement {
             Achievement::ChessVictor            => "♔",
             Achievement::ChessBlitz             => "⚡",
             Achievement::ChessQueenSlayer       => "♕",
+            Achievement::TicTacToeVictor        => "✕",
+            Achievement::TicTacToeDraw          => "🤝",
+            Achievement::TicTacToeFlawless      => "⚡",
         }
     }
 
@@ -283,6 +294,9 @@ impl Achievement {
             Achievement::ChessVictor            => "Chess Champion",
             Achievement::ChessBlitz             => "Blitz Master",
             Achievement::ChessQueenSlayer       => "Queen Slayer",
+            Achievement::TicTacToeVictor        => "Tic Tac Toe Victor",
+            Achievement::TicTacToeDraw          => "Stalemate Strategist",
+            Achievement::TicTacToeFlawless      => "Five-Move Finisher",
         }
     }
 
@@ -309,6 +323,9 @@ impl Achievement {
             Achievement::ChessVictor            => "Defeated the AI opponent at chess",
             Achievement::ChessBlitz             => "Checkmated the AI in under 30 moves",
             Achievement::ChessQueenSlayer       => "Won a chess game after the AI had a queen on the board",
+            Achievement::TicTacToeVictor        => "Defeated the AI opponent at Tic Tac Toe",
+            Achievement::TicTacToeDraw          => "Forced a draw against the Tic Tac Toe AI",
+            Achievement::TicTacToeFlawless      => "Won a Tic Tac Toe game in the minimum 5 moves",
         }
     }
 }
@@ -670,6 +687,63 @@ fn main() {
                     format_duration(avg_secs),
                 );
             }
+
+            GameMode::TicTacToe => {
+                println!("\n{}", col(YELLOW, "✕ Launching Iron Age Tic Tac Toe…"));
+                println!("{}", col(CYAN, "  (Arrow keys / WASD / hjkl: move cursor | Enter / Space: place | R: restart | Q: quit)"));
+                println!("{}", col(CYAN, "─".repeat(62)));
+
+                let (won, drawn, player_moves) = play_tic_tac_toe();
+
+                total_games += 1;
+                if won { total_wins += 1; }
+
+                // ── Tic Tac Toe achievements ────────────────────────────────
+                let mut new_achievements: Vec<Achievement> = Vec::new();
+
+                if won {
+                    new_achievements.push(Achievement::TicTacToeVictor);
+                }
+                // 5 is the minimum number of player moves to win (player's turns 1, 3, 5).
+                if won && player_moves <= 5 {
+                    new_achievements.push(Achievement::TicTacToeFlawless);
+                }
+                if drawn {
+                    new_achievements.push(Achievement::TicTacToeDraw);
+                }
+                if total_games >= 5 && !session_achievements.contains(&Achievement::Persistent) {
+                    new_achievements.push(Achievement::Persistent);
+                }
+
+                for ach in new_achievements {
+                    if !session_achievements.contains(&ach) {
+                        println!("\n{} {} {}: {}",
+                            col(YELLOW, "🏅 ACHIEVEMENT UNLOCKED:"),
+                            ach.emoji(),
+                            col(BOLD, ach.title()),
+                            ach.description()
+                        );
+                        session_achievements.push(ach);
+                    }
+                }
+
+                let result_str = if won {
+                    col(GREEN, "✅ You defeated the AI!".to_string())
+                } else if drawn {
+                    col(MAGENTA, "🤝 It's a draw!".to_string())
+                } else {
+                    col(RED, "💥 The AI wins this time!".to_string())
+                };
+                let avg_secs = if total_games > 0 { total_secs / total_games as u64 } else { 0 };
+                println!("\n{}  │  {} game{} played  │  {} win{}  │  {} avg time/round",
+                    result_str,
+                    col(CYAN, total_games.to_string()),
+                    if total_games == 1 { "" } else { "s" },
+                    total_wins,
+                    if total_wins == 1 { "" } else { "s" },
+                    format_duration(avg_secs),
+                );
+            }
         }
 
         if !session_achievements.is_empty() {
@@ -745,10 +819,18 @@ fn print_banner() {
     println!("     – Full chess rules: castling, en passant, promotion, check & checkmate");
     println!("     – Minimax AI opponent with alpha-beta pruning + piece-square tables");
     println!();
+    println!("  {} {}",
+        col(YELLOW, "7."),
+        col(BOLD, "✕  Iron Age Tic Tac Toe")
+    );
+    println!("     Face the AI on the classic 3×3 grid – can you outwit it?");
+    println!("     – Minimax AI opponent (80 % optimal + 20 % random to keep it fun)");
+    println!("     – Full TUI keyboard interface");
+    println!();
     println!("{}", col(BOLD, "  ✨ Features across all games:"));
     println!("     • 10 unique roasters with personality");
     println!("     • Optional profanity mode 🔞");
-    println!("     • 21 achievements to unlock 🏅");
+    println!("     • 24 achievements to unlock 🏅");
     println!("     • Per-round timer ⏱️");
     println!("     • Session statistics 📊");
     println!("{}", col(CYAN, "─".repeat(62)));
@@ -1611,8 +1693,9 @@ fn ask_game_mode() -> GameMode {
     println!("  4. 💣 Iron Age Minesweeper – Clear the cursed ruins without hitting a trap!");
     println!("  5. ♟  Iron Age Checkers    – Outmanoeuvre the AI on the ancient board!");
     println!("  6. ♔  Iron Age Chess       – Face the AI on the 64-square battlefield!");
+    println!("  7. ✕  Iron Age Tic Tac Toe – Outwit the AI on the classic 3×3 grid!");
     loop {
-        print!("\n🎯 Your choice (1-6): ");
+        print!("\n🎯 Your choice (1-7): ");
         io::stdout().flush().expect("Failed to flush stdout");
 
         let mut input = String::new();
@@ -1625,7 +1708,8 @@ fn ask_game_mode() -> GameMode {
             "4" => return GameMode::Minesweeper,
             "5" => return GameMode::Checkers,
             "6" => return GameMode::Chess,
-            _   => println!("{}", col(RED, "❌ Please enter 1, 2, 3, 4, 5, or 6.\n")),
+            "7" => return GameMode::TicTacToe,
+            _   => println!("{}", col(RED, "❌ Please enter 1, 2, 3, 4, 5, 6, or 7.\n")),
         }
     }
 }
@@ -2350,6 +2434,72 @@ fn play_wordle(roaster: Roaster, profane: bool) -> (bool, u32, u64) {
         }
         println!();
     }
+}
+
+// ── Iron Age Tic Tac Toe ──────────────────────────────────────────────────────
+
+/// Run a full Tic Tac Toe session (play → optional restart → return).
+/// Returns `(player_won, was_drawn, player_moves_in_last_game)`.
+fn play_tic_tac_toe() -> (bool, bool, u32) {
+    use crossterm::{cursor, execute, terminal::{self, EnterAlternateScreen, LeaveAlternateScreen}};
+    use tic_tac_toe::board::{Board, GameStatus};
+    use tic_tac_toe::display::{draw, read_action, InputAction};
+
+    let mut stdout = io::stdout();
+    let _ = execute!(stdout, EnterAlternateScreen, cursor::Hide);
+    let _ = terminal::enable_raw_mode();
+
+    let mut player_won  = false;
+    let mut was_drawn   = false;
+    let mut player_moves = 0u32;
+
+    'outer: loop {
+        let mut board = Board::new();
+        let mut cursor_row = 1usize;
+        let mut cursor_col = 1usize;
+
+        loop {
+            let _ = draw(&board, cursor_row, cursor_col);
+
+            if board.is_over() {
+                player_moves = board.player_moves;
+                match board.status {
+                    GameStatus::PlayerWon => { player_won = true; was_drawn = false; }
+                    GameStatus::Draw      => { was_drawn  = true; }
+                    _                    => { was_drawn  = false; }
+                }
+                // Wait for restart or quit.
+                loop {
+                    match read_action().unwrap_or(InputAction::Quit) {
+                        InputAction::Restart => continue 'outer,
+                        InputAction::Quit    => break 'outer,
+                        _ => {}
+                    }
+                }
+            }
+
+            match read_action().unwrap_or(InputAction::Quit) {
+                InputAction::Move(dr, dc) => {
+                    cursor_row = (cursor_row as i32 + dr).clamp(0, 2) as usize;
+                    cursor_col = (cursor_col as i32 + dc).clamp(0, 2) as usize;
+                }
+                InputAction::Confirm => {
+                    if board.player_move(cursor_row, cursor_col) && !board.is_over() {
+                        // AI responds immediately.
+                        board.ai_move();
+                    }
+                }
+                InputAction::Restart => continue 'outer,
+                InputAction::Quit    => break 'outer,
+                InputAction::None    => {}
+            }
+        }
+    }
+
+    let _ = terminal::disable_raw_mode();
+    let _ = execute!(io::stdout(), cursor::Show, LeaveAlternateScreen);
+
+    (player_won, was_drawn, player_moves)
 }
 
 // ── Minesweeper ───────────────────────────────────────────────────────────────
