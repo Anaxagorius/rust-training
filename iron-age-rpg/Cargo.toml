@@ -9,6 +9,7 @@ members = [
     "crates/crafting",
     "crates/data",
     "crates/game",
+    "crates/minesweeper",
 ]
 resolver = "2"
 
