@@ -1,4 +1,5 @@
 mod checkers;
+mod chess;
 mod minesweeper;
 
 use rand::Rng;
@@ -76,6 +77,7 @@ enum GameMode {
     Wordle,
     Minesweeper,
     Checkers,
+    Chess,
 }
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -223,6 +225,12 @@ enum Achievement {
     CheckersVictor,
     /// Beat the AI at checkers after both sides had a king on the board.
     CheckersKing,
+    /// Beat the AI at chess.
+    ChessVictor,
+    /// Beat the AI at chess in under 30 moves.
+    ChessBlitz,
+    /// Beat the AI at chess after it had a queen on the board.
+    ChessQueenSlayer,
 }
 
 impl Achievement {
@@ -246,6 +254,9 @@ impl Achievement {
             Achievement::MinesweeperSpeedrunner => "🏃",
             Achievement::CheckersVictor         => "♟",
             Achievement::CheckersKing           => "♛",
+            Achievement::ChessVictor            => "♔",
+            Achievement::ChessBlitz             => "⚡",
+            Achievement::ChessQueenSlayer       => "♕",
         }
     }
 
@@ -269,6 +280,9 @@ impl Achievement {
             Achievement::MinesweeperSpeedrunner => "Speedrunner",
             Achievement::CheckersVictor         => "Checkers Champion",
             Achievement::CheckersKing           => "King of the Board",
+            Achievement::ChessVictor            => "Chess Champion",
+            Achievement::ChessBlitz             => "Blitz Master",
+            Achievement::ChessQueenSlayer       => "Queen Slayer",
         }
     }
 
@@ -292,6 +306,9 @@ impl Achievement {
             Achievement::MinesweeperSpeedrunner => "Won Peasant minesweeper in under 60 seconds",
             Achievement::CheckersVictor         => "Defeated the AI opponent at checkers",
             Achievement::CheckersKing           => "Won a checkers game where both sides had kings",
+            Achievement::ChessVictor            => "Defeated the AI opponent at chess",
+            Achievement::ChessBlitz             => "Checkmated the AI in under 30 moves",
+            Achievement::ChessQueenSlayer       => "Won a chess game after the AI had a queen on the board",
         }
     }
 }
@@ -597,6 +614,62 @@ fn main() {
                     format_duration(avg_secs),
                 );
             }
+
+            GameMode::Chess => {
+                println!("\n{}", col(YELLOW, "♔ Launching Iron Age Chess…"));
+                println!("{}", col(CYAN, "  (Arrow keys / hjkl: move cursor | Enter/Space: select/move | Esc: deselect | R: restart | Q: quit)"));
+                println!("{}", col(CYAN, "─".repeat(62)));
+
+                let (won, move_count, ai_had_queen, elapsed_secs) = play_chess();
+
+                total_games += 1;
+                total_secs  += elapsed_secs;
+                if won { total_wins += 1; }
+
+                // ── Chess achievements ────────────────────────────────────────
+                let mut new_achievements: Vec<Achievement> = Vec::new();
+
+                if won {
+                    new_achievements.push(Achievement::ChessVictor);
+                }
+                if won && move_count < 30 {
+                    new_achievements.push(Achievement::ChessBlitz);
+                }
+                if won && ai_had_queen {
+                    new_achievements.push(Achievement::ChessQueenSlayer);
+                }
+                if total_games >= 5 && !session_achievements.contains(&Achievement::Persistent) {
+                    new_achievements.push(Achievement::Persistent);
+                }
+
+                for ach in new_achievements {
+                    if !session_achievements.contains(&ach) {
+                        println!("\n{} {} {}: {}",
+                            col(YELLOW, "🏅 ACHIEVEMENT UNLOCKED:"),
+                            ach.emoji(),
+                            col(BOLD, ach.title()),
+                            ach.description()
+                        );
+                        session_achievements.push(ach);
+                    }
+                }
+
+                let result_str = if won {
+                    col(GREEN, "✅ Checkmate – you won!".to_string())
+                } else {
+                    col(RED, "💥 Better luck next time!".to_string())
+                };
+                let avg_secs = if total_games > 0 { total_secs / total_games as u64 } else { 0 };
+                println!("\n{}  ⏱ {}  │  {} game{} played  │  {} win{}  │  {} avg time/round",
+                    result_str,
+                    format_duration(elapsed_secs),
+                    col(CYAN, total_games.to_string()),
+                    if total_games == 1 { "" } else { "s" },
+                    total_wins,
+                    if total_wins == 1 { "" } else { "s" },
+                    format_duration(avg_secs),
+                );
+            }
         }
 
         if !session_achievements.is_empty() {
@@ -619,10 +692,10 @@ fn main() {
 
 fn print_banner() {
     println!("{}", col(CYAN, "╔════════════════════════════════════════════════════════════╗"));
-    println!("{}", col(CYAN, "║") + &col(BOLD, "         🎮  ULTRA GAME SUITE v6.0 – HOME PAGE  🎮        ") + &col(CYAN, "║"));
+    println!("{}", col(CYAN, "║") + &col(BOLD, "         🎮  ULTRA GAME SUITE v7.0 – HOME PAGE  🎮        ") + &col(CYAN, "║"));
     println!("{}", col(CYAN, "╚════════════════════════════════════════════════════════════╝"));
     println!();
-    println!("{}", col(BOLD, "  🕹️  Choose from 5 exciting games:"));
+    println!("{}", col(BOLD, "  🕹️  Choose from 6 exciting games:"));
     println!();
     println!("  {} {}",
         col(YELLOW, "1."),
@@ -664,10 +737,18 @@ fn print_banner() {
     println!("     – Full American checkers rules: mandatory captures, kings, multi-jumps");
     println!("     – Minimax AI opponent with alpha-beta pruning (depth 5)");
     println!();
+    println!("  {} {}",
+        col(YELLOW, "6."),
+        col(BOLD, "♔  Iron Age Chess")
+    );
+    println!("     Face the AI across the 64-square battlefield – single player!");
+    println!("     – Full chess rules: castling, en passant, promotion, check & checkmate");
+    println!("     – Minimax AI opponent with alpha-beta pruning + piece-square tables");
+    println!();
     println!("{}", col(BOLD, "  ✨ Features across all games:"));
     println!("     • 10 unique roasters with personality");
     println!("     • Optional profanity mode 🔞");
-    println!("     • 18 achievements to unlock 🏅");
+    println!("     • 21 achievements to unlock 🏅");
     println!("     • Per-round timer ⏱️");
     println!("     • Session statistics 📊");
     println!("{}", col(CYAN, "─".repeat(62)));
@@ -1529,8 +1610,9 @@ fn ask_game_mode() -> GameMode {
     println!("  3. 🟩 Wordle               – Guess the 5-letter word in 6 tries!");
     println!("  4. 💣 Iron Age Minesweeper – Clear the cursed ruins without hitting a trap!");
     println!("  5. ♟  Iron Age Checkers    – Outmanoeuvre the AI on the ancient board!");
+    println!("  6. ♔  Iron Age Chess       – Face the AI on the 64-square battlefield!");
     loop {
-        print!("\n🎯 Your choice (1-5): ");
+        print!("\n🎯 Your choice (1-6): ");
         io::stdout().flush().expect("Failed to flush stdout");
 
         let mut input = String::new();
@@ -1542,7 +1624,8 @@ fn ask_game_mode() -> GameMode {
             "3" => return GameMode::Wordle,
             "4" => return GameMode::Minesweeper,
             "5" => return GameMode::Checkers,
-            _   => println!("{}", col(RED, "❌ Please enter 1, 2, 3, 4, or 5.\n")),
+            "6" => return GameMode::Chess,
+            _   => println!("{}", col(RED, "❌ Please enter 1, 2, 3, 4, 5, or 6.\n")),
         }
     }
 }
@@ -2479,4 +2562,128 @@ fn play_checkers() -> (bool, bool, u64) {
     let _ = execute!(io::stdout(), cursor::Show, LeaveAlternateScreen);
 
     (player_won, kings_ever, total_secs)
+}
+
+// ── Iron Age Chess ────────────────────────────────────────────────────────────
+
+/// Run a full chess session (play → optional restart → return).
+/// Returns `(player_won, total_move_count, ai_ever_had_queen, total_elapsed_secs)`.
+fn play_chess() -> (bool, u32, bool, u64) {
+    use crossterm::{cursor, execute, terminal::{self, EnterAlternateScreen, LeaveAlternateScreen}};
+    use chess::board::{Board, GameStatus, PieceKind};
+    use chess::board::Color as PColor;
+    use chess::board::Turn;
+    use chess::display::{draw, read_action, InputAction};
+    use std::time::Instant;
+
+    let mut stdout = io::stdout();
+
+    let _ = execute!(stdout, EnterAlternateScreen, cursor::Hide);
+    let _ = terminal::enable_raw_mode();
+
+    let mut player_won    = false;
+    let mut ai_had_queen  = false;
+    let mut total_secs    = 0u64;
+    let mut total_moves   = 0u32;
+
+    'outer: loop {
+        let mut board = Board::new();
+        // Start cursor near the white pieces.
+        let mut cursor_row = 6usize;
+        let mut cursor_col = 4usize;
+        let start = Instant::now();
+
+        loop {
+            // Track whether the AI ever had a queen.
+            if !ai_had_queen {
+                'qcheck: for row in &board.cells {
+                    for sq in row {
+                        if let Some(p) = sq {
+                            if p.color == PColor::Black && p.kind == PieceKind::Queen {
+                                ai_had_queen = true;
+                                break 'qcheck;
+                            }
+                        }
+                    }
+                }
+            }
+
+            let _ = draw(&board, cursor_row, cursor_col);
+
+            let is_over = matches!(
+                board.status,
+                GameStatus::PlayerWon | GameStatus::AiWon | GameStatus::Stalemate | GameStatus::Draw
+            );
+
+            // AI's turn – apply automatically.
+            if !is_over && board.turn == Turn::Black {
+                board.ai_move();
+                let _ = draw(&board, cursor_row, cursor_col);
+
+                let is_over_after = matches!(
+                    board.status,
+                    GameStatus::PlayerWon | GameStatus::AiWon | GameStatus::Stalemate | GameStatus::Draw
+                );
+                if is_over_after {
+                    total_secs  += start.elapsed().as_secs();
+                    total_moves += board.move_count;
+                    if board.status == GameStatus::PlayerWon { player_won = true; }
+                    // Wait for restart or quit.
+                    'end1: loop {
+                        match read_action().unwrap_or(InputAction::Quit) {
+                            InputAction::Restart => continue 'outer,
+                            InputAction::Quit    => break 'end1,
+                            _ => {}
+                        }
+                    }
+                    break 'outer;
+                }
+                continue;
+            }
+
+            if is_over {
+                total_secs  += start.elapsed().as_secs();
+                total_moves += board.move_count;
+                if board.status == GameStatus::PlayerWon { player_won = true; }
+                // Wait for restart or quit.
+                'end2: loop {
+                    match read_action().unwrap_or(InputAction::Quit) {
+                        InputAction::Restart => continue 'outer,
+                        InputAction::Quit    => break 'end2,
+                        _ => {}
+                    }
+                }
+                break 'outer;
+            }
+
+            // Player input.
+            match read_action().unwrap_or(InputAction::Quit) {
+                InputAction::Move(dr, dc) => {
+                    cursor_row = (cursor_row as i32 + dr).clamp(0, 7) as usize;
+                    cursor_col = (cursor_col as i32 + dc).clamp(0, 7) as usize;
+                }
+                InputAction::Confirm => {
+                    if board.selected.is_some() {
+                        if !board.move_selected_to(cursor_row, cursor_col) {
+                            board.deselect();
+                            board.select(cursor_row, cursor_col);
+                        }
+                    } else {
+                        board.select(cursor_row, cursor_col);
+                    }
+                }
+                InputAction::Deselect => {
+                    board.deselect();
+                }
+                InputAction::Restart => continue 'outer,
+                InputAction::Quit    => break 'outer,
+                InputAction::None    => {}
+            }
+        }
+    }
+
+    let _ = terminal::disable_raw_mode();
+    let _ = execute!(io::stdout(), cursor::Show, LeaveAlternateScreen);
+
+    (player_won, total_moves, ai_had_queen, total_secs)
 }
