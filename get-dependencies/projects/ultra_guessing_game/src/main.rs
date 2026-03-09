@@ -70,6 +70,7 @@ impl Roaster {
 enum GameMode {
     GuessingGame,
     Hangman,
+    Wordle,
 }
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -154,6 +155,30 @@ const HANGMAN_WORDS: &[&str] = &[
     "shenanigan", "brouhaha", "hullabaloo", "rambunctious", "flummox",
 ];
 
+// All Wordle words must be exactly 5 letters.
+const WORDLE_WORDS: &[&str] = &[
+    // culinary / kitchen
+    "sauce", "broth", "spice", "gravy", "toast", "bagel", "crepe", "glaze", "brine", "basil",
+    "cumin", "dough", "flour", "honey", "lemon", "maple", "olive", "sugar", "thyme", "yeast",
+    "cauli", "chive", "clove", "mochi", "panko", "ramen", "salsa", "tacos", "pesto", "umami",
+    // music
+    "chord", "lyric", "notes", "piano", "tempo", "tenor", "vocal", "drums", "flute", "viola",
+    "blues", "cello", "verse", "waltz", "pitch", "album", "beats", "synth",
+    // gaming
+    "quest", "sword", "level", "score", "spawn", "gamer", "pixel", "cheat", "arena", "joust",
+    "boost", "bonus", "rally",
+    // fashion
+    "shirt", "cloak", "scarf", "boots", "skirt", "plaid", "tweed", "vogue", "rouge", "tiara",
+    "satin", "linen", "gowns",
+    // general fun
+    "flame", "storm", "light", "brave", "candy", "cloud", "dream", "frost", "magic", "night",
+    "river", "solar", "tiger", "ultra", "witch", "blaze", "crave", "disco", "fancy", "heart",
+    "karma", "lunar", "mango", "ninja", "ocean", "queen", "relay", "vapor", "wafer", "zebra",
+    "adore", "brisk", "crisp", "jazzy", "eagle", "flick", "gleam", "haste", "irony", "joker",
+    "kneel", "lunge", "mirth", "nudge", "onset", "pouch", "quirk", "remit", "sheen", "tread",
+    "umber", "vivid", "wrath", "expel", "yacht", "zingy",
+];
+
 // ── Achievement System ─────────────────────────────────────────────────────────
 #[derive(Debug, PartialEq, Clone)]
 enum Achievement {
@@ -177,6 +202,12 @@ enum Achievement {
     HangmanFlawless,
     /// Won hangman with exactly 5 wrong guesses (one life remaining).
     NarrowEscape,
+    /// Solved Wordle on the very first guess.
+    WordleFlawless,
+    /// Solved Wordle in ≤ 3 guesses.
+    WordleGenius,
+    /// Solved Wordle on the last possible guess (6th).
+    WordleNarrowEscape,
 }
 
 impl Achievement {
@@ -192,6 +223,9 @@ impl Achievement {
             Achievement::Perfectionist => "💎",
             Achievement::HangmanFlawless => "📖",
             Achievement::NarrowEscape    => "😰",
+            Achievement::WordleFlawless  => "🟩",
+            Achievement::WordleGenius    => "🧩",
+            Achievement::WordleNarrowEscape => "😅",
         }
     }
 
@@ -207,6 +241,9 @@ impl Achievement {
             Achievement::Perfectionist => "Perfectionist",
             Achievement::HangmanFlawless => "Flawless Vocabulary",
             Achievement::NarrowEscape    => "Narrow Escape",
+            Achievement::WordleFlawless  => "Wordle Psychic",
+            Achievement::WordleGenius    => "Wordle Genius",
+            Achievement::WordleNarrowEscape => "Last Word Standing",
         }
     }
 
@@ -222,6 +259,9 @@ impl Achievement {
             Achievement::Perfectionist => "First-try win on Hard or Insane difficulty",
             Achievement::HangmanFlawless => "Solved a hangman word without any wrong guesses",
             Achievement::NarrowEscape    => "Won hangman with only one guess remaining",
+            Achievement::WordleFlawless  => "Solved the Wordle word on the very first guess",
+            Achievement::WordleGenius    => "Solved Wordle in 3 guesses or fewer",
+            Achievement::WordleNarrowEscape => "Solved Wordle on the 6th and final guess",
         }
     }
 }
@@ -372,6 +412,52 @@ fn main() {
                     format_duration(avg_secs),
                 );
             }
+
+            GameMode::Wordle => {
+                let (won, guess_count, elapsed_secs) = play_wordle(roaster, profane);
+
+                total_games += 1;
+                total_secs  += elapsed_secs;
+                if won { total_wins += 1; }
+
+                // ── Wordle achievements ────────────────────────────────────────
+                let mut new_achievements: Vec<Achievement> = Vec::new();
+
+                if won && guess_count == 1 {
+                    new_achievements.push(Achievement::WordleFlawless);
+                }
+                if won && guess_count <= 3 {
+                    new_achievements.push(Achievement::WordleGenius);
+                }
+                if won && guess_count == 6 {
+                    new_achievements.push(Achievement::WordleNarrowEscape);
+                }
+                if total_games >= 5 && !session_achievements.contains(&Achievement::Persistent) {
+                    new_achievements.push(Achievement::Persistent);
+                }
+
+                for ach in new_achievements {
+                    if !session_achievements.contains(&ach) {
+                        println!("\n{} {} {}: {}",
+                            col(YELLOW, "🏅 ACHIEVEMENT UNLOCKED:"),
+                            ach.emoji(),
+                            col(BOLD, ach.title()),
+                            ach.description()
+                        );
+                        session_achievements.push(ach);
+                    }
+                }
+
+                let avg_secs = if total_games > 0 { total_secs / total_games as u64 } else { 0 };
+                println!("\n{} {} game{} played  │  {} win{}  │  {} avg time/round",
+                    col(CYAN, "📊 Session:"),
+                    total_games,
+                    if total_games == 1 { "" } else { "s" },
+                    total_wins,
+                    if total_wins == 1 { "" } else { "s" },
+                    format_duration(avg_secs),
+                );
+            }
         }
 
         if !session_achievements.is_empty() {
@@ -393,22 +479,44 @@ fn main() {
 }
 
 fn print_banner() {
-    println!("{}", col(CYAN, "=".repeat(60)));
-    println!("{}", col(BOLD, "🎲  ULTRA GAME SUITE v4.0 – Guessing Game & Hangman  🎲"));
-    println!("{}", col(CYAN, "=".repeat(60)));
-    println!("Games:");
-    println!("  🎲 Number Guessing Game – Guess the secret number!");
-    println!("  💀 Hangman              – Guess the hidden word letter by letter!");
-    println!("Features:");
-    println!("  ✨ 10 unique roasters with personality");
-    println!("  🏆 Persistent leaderboards across 4 difficulties (guessing game)");
-    println!("  🌡️  Warmth hints (getting warmer/colder)");
-    println!("  🔥 Optional profanity mode");
-    println!("  📊 Session statistics tracking");
-    println!("  💡 In-round hint system (type {} for a clue!)", col(YELLOW, "'h'"));
-    println!("  🏅 Achievement system – 10 badges to unlock");
-    println!("  ⏱️  Per-round timer");
-    println!("  🎨 Custom difficulty – define your own number range\n");
+    println!("{}", col(CYAN, "╔════════════════════════════════════════════════════════════╗"));
+    println!("{}", col(CYAN, "║") + &col(BOLD, "         🎮  ULTRA GAME SUITE v5.0 – HOME PAGE  🎮        ") + &col(CYAN, "║"));
+    println!("{}", col(CYAN, "╚════════════════════════════════════════════════════════════╝"));
+    println!();
+    println!("{}", col(BOLD, "  🕹️  Choose from 3 exciting games:"));
+    println!();
+    println!("  {} {}",
+        col(YELLOW, "1."),
+        col(BOLD, "🎲 Number Guessing Game")
+    );
+    println!("     Guess the secret number with roaster commentary!");
+    println!("     – 4 difficulty levels (Easy → Insane) + Custom range");
+    println!("     – Warmth hints, in-round clues, persistent leaderboards");
+    println!();
+    println!("  {} {}",
+        col(YELLOW, "2."),
+        col(BOLD, "💀 Hangman")
+    );
+    println!("     Guess the hidden word letter by letter before you're hanged!");
+    println!("     – Themed word pool: culinary, music, gaming & more");
+    println!("     – 6 lives, roaster commentary on every wrong guess");
+    println!();
+    println!("  {} {}",
+        col(YELLOW, "3."),
+        col(BOLD, "🟩 Wordle")
+    );
+    println!("     Guess the secret 5-letter word in 6 tries!");
+    println!("     – 🟩 correct position  🟨 wrong position  ⬛ not in word");
+    println!("     – Roaster commentary after every guess");
+    println!();
+    println!("{}", col(BOLD, "  ✨ Features across all games:"));
+    println!("     • 10 unique roasters with personality");
+    println!("     • Optional profanity mode 🔞");
+    println!("     • 13 achievements to unlock 🏅");
+    println!("     • Per-round timer ⏱️");
+    println!("     • Session statistics 📊");
+    println!("{}", col(CYAN, "─".repeat(62)));
+    println!();
 }
 
 fn print_roaster_intro(roaster: Roaster) {
@@ -1259,11 +1367,13 @@ fn ask_play_again() -> bool {
 
 // ── Game Mode Selection ───────────────────────────────────────────────────────
 fn ask_game_mode() -> GameMode {
-    println!("\n🎮 Choose your game:\n");
+    println!("{}", col(BOLD, "🎮 Select a game:"));
+    println!();
     println!("  1. 🎲 Number Guessing Game – Guess the secret number with roaster commentary!");
     println!("  2. 💀 Hangman              – Guess the hidden word letter by letter!");
+    println!("  3. 🟩 Wordle               – Guess the 5-letter word in 6 tries!");
     loop {
-        print!("\n🎯 Your choice (1-2): ");
+        print!("\n🎯 Your choice (1-3): ");
         io::stdout().flush().expect("Failed to flush stdout");
 
         let mut input = String::new();
@@ -1272,7 +1382,8 @@ fn ask_game_mode() -> GameMode {
         match input.trim() {
             "1" => return GameMode::GuessingGame,
             "2" => return GameMode::Hangman,
-            _   => println!("{}", col(RED, "❌ Please enter 1 or 2.\n")),
+            "3" => return GameMode::Wordle,
+            _   => println!("{}", col(RED, "❌ Please enter 1, 2, or 3.\n")),
         }
     }
 }
@@ -1586,6 +1697,414 @@ fn play_hangman(roaster: Roaster, profane: bool) -> (bool, u32, u64) {
                     max_wrong - wrong_guesses,
                 );
             }
+        }
+        println!();
+    }
+}
+
+// ── Wordle ────────────────────────────────────────────────────────────────────
+
+/// Result for a single letter position in a Wordle guess.
+#[derive(PartialEq, Clone, Copy)]
+enum LetterResult {
+    /// Correct letter in the correct position (🟩).
+    Correct,
+    /// Correct letter but in the wrong position (🟨).
+    Present,
+    /// Letter is not in the word at all (⬛).
+    Absent,
+}
+
+/// Score a 5-letter Wordle guess against the secret word.
+/// Handles duplicate letters correctly (same rules as the official Wordle).
+/// Score a 5-letter Wordle guess against the secret word.
+/// Handles duplicate letters correctly (same rules as the official Wordle).
+///
+/// # Panics
+/// Both `secret` and `guess` must contain uppercase ASCII alphabetic characters ('A'–'Z').
+fn score_wordle_guess(secret: &[char], guess: &[char]) -> Vec<LetterResult> {
+    debug_assert!(secret.iter().all(|c| c.is_ascii_uppercase()), "secret must be uppercase ASCII");
+    debug_assert!(guess.iter().all(|c| c.is_ascii_uppercase()), "guess must be uppercase ASCII");
+
+    let mut result = vec![LetterResult::Absent; 5];
+    // Track how many of each letter in the secret remain unaccounted for.
+    let mut remaining: [u8; 26] = [0; 26];
+
+    // First pass: mark correct positions.
+    for i in 0..5 {
+        if guess[i] == secret[i] {
+            result[i] = LetterResult::Correct;
+        } else {
+            let idx = (secret[i] as u8 - b'A') as usize;
+            remaining[idx] += 1;
+        }
+    }
+
+    // Second pass: mark present (wrong position) letters.
+    for i in 0..5 {
+        if result[i] == LetterResult::Correct {
+            continue;
+        }
+        let idx = (guess[i] as u8 - b'A') as usize;
+        if remaining[idx] > 0 {
+            result[i] = LetterResult::Present;
+            remaining[idx] -= 1;
+        }
+    }
+
+    result
+}
+
+/// Render a single Wordle row: colored letters + emoji squares side by side.
+fn render_wordle_row(guess: &[char], result: &[LetterResult]) -> String {
+    let mut letters = String::new();
+    let mut squares = String::new();
+
+    for (i, (&ch, res)) in guess.iter().zip(result.iter()).enumerate() {
+        if i > 0 {
+            letters.push(' ');
+            squares.push(' ');
+        }
+        let (color, square) = match res {
+            LetterResult::Correct => (GREEN, "🟩"),
+            LetterResult::Present => (YELLOW, "🟨"),
+            LetterResult::Absent  => ("\x1b[90m", "⬛"), // dark gray
+        };
+        letters.push_str(&format!("{}{}{}",  color, BOLD, ch));
+        letters.push_str(RESET);
+        squares.push_str(square);
+    }
+
+    format!("  {}   {}", letters, squares)
+}
+
+/// Returns (guess_jibes, close_jibes, win_message, loss_message) for each roaster.
+/// `guess_jibes` are delivered after a poor guess, `close_jibes` when 3+ letters match.
+fn wordle_roaster_jibes(roaster: Roaster) -> (Vec<String>, Vec<String>, &'static str, &'static str) {
+    match roaster {
+        Roaster::Ramsay => (
+            vec![
+                "That's not even a real word, you donut!",
+                "Wrong! Are you guessing with your eyes closed, idiot sandwich?",
+                "Pathetic guess! My gran could spell better and she's been dead for years!",
+                "What is THAT?! You useless plonker!",
+                "WRONG! You're embarrassing yourself, you absolute muppet!",
+            ].into_iter().map(String::from).collect(),
+            vec![
+                "Getting warmer, you donkey – keep going!",
+                "So close! Don't screw it up now, you plank!",
+                "You're nearly there – don't be an idiot and overthink it!",
+            ].into_iter().map(String::from).collect(),
+            "🟩 FINALLY! You got it right – about bloody time, you donut!",
+            "🔪 Pathetic. You couldn't spell your way out of a kitchen. The word was",
+        ),
+        Roaster::UncleRoger => (
+            vec![
+                "Haiyaa! That word is so wrong lah!",
+                "Why you guess like that? No brain one ah?",
+                "Aiyo! Uncle Roger cover his face. So embarrassing!",
+                "Haiyaa! You guess like Jamie Oliver cook rice. All wrong!",
+                "Fuiyoh! That's the worst guess Uncle Roger ever see!",
+            ].into_iter().map(String::from).collect(),
+            vec![
+                "Fuiyoh! Getting closer lah! Uncle Roger believe in you!",
+                "Aiyah! So near already! Don't mess up now!",
+                "Haiyaa! Almost! Think harder lah!",
+            ].into_iter().map(String::from).collect(),
+            "🟩 Fuiyoh! Correct lah! Uncle Roger so proud! MSG approved!",
+            "🍚 Haiyaa! You fail! Uncle Roger emotionally damage. The word was",
+        ),
+        Roaster::RickAstley => (
+            vec![
+                "Never gonna give you the right word at this rate!",
+                "We've known the rules and so have I – that's wrong!",
+                "Never gonna run around and desert the answer, but you sure deserted logic!",
+                "Inside hurts to see that guess – never gonna make you cry though!",
+            ].into_iter().map(String::from).collect(),
+            vec![
+                "We're no strangers to progress – you're getting warmer!",
+                "Never gonna give up on you – keep going!",
+                "That's a commitment I can respect – so close!",
+            ].into_iter().map(String::from).collect(),
+            "🟩 Never gonna let you down – you got it! Knew you could do it!",
+            "🎵 Never gonna say goodbye... but that was terrible. The word was",
+        ),
+        Roaster::SimonCowell => (
+            vec![
+                "That was absolutely dreadful. Genuinely terrible.",
+                "I've seen better guesses from people who don't speak English.",
+                "It's a no from me. Completely wrong.",
+                "That guess had no thought, no structure, no logic.",
+                "Honestly? That was one of the worst guesses I've ever witnessed.",
+            ].into_iter().map(String::from).collect(),
+            vec![
+                "You're improving. Marginally. Don't get too excited.",
+                "That's... actually not terrible. Keep going.",
+                "Getting there. Don't ruin it now.",
+            ].into_iter().map(String::from).collect(),
+            "🟩 I didn't think you had it in you. But there it is. Well done.",
+            "❌ You failed. Completely and utterly. The word was",
+        ),
+        Roaster::NikkiGlaser => (
+            vec![
+                "Okay that guess was giving absolutely nothing, babe.",
+                "Honey, that word isn't even in the dictionary of your brain.",
+                "That guess is giving 'tried my best and still flopped.'",
+                "Oh sweetie, no. Just... no.",
+                "That was a choice. A wrong one, but a choice.",
+            ].into_iter().map(String::from).collect(),
+            vec![
+                "Okay you're getting closer! Don't overthink it, babe!",
+                "Ooh getting warm! You've got this!",
+                "Almost! The universe is rooting for you!",
+            ].into_iter().map(String::from).collect(),
+            "🟩 YES! You got it! That was actually impressive, not gonna lie!",
+            "💅 Oof, honey. The word was",
+        ),
+        Roaster::JoanRivers => (
+            vec![
+                "Can we talk? Because that guess was a DISASTER, darling.",
+                "Oh my God, who taught you to spell? A goldfish?",
+                "Darling, that guess was uglier than my first facelift.",
+                "That word? Really? In this economy of intelligence?",
+                "I've seen better letter choices in alphabet soup, sweetheart.",
+            ].into_iter().map(String::from).collect(),
+            vec![
+                "Getting closer, darling – don't stop now!",
+                "Ooh, you're on to something! Keep going, sweetheart!",
+                "Almost! I can feel it! Don't let me down!",
+            ].into_iter().map(String::from).collect(),
+            "🟩 You got it! Darling, I'm actually impressed – and I'm NEVER impressed!",
+            "👗 Tragic. Absolutely tragic, darling. The word was",
+        ),
+        Roaster::CaseOh => (
+            vec![
+                "CHAT! CHAT! They just guessed THAT?! We are SO cooked!",
+                "BRO WHAT IS THAT WORD?! My chat is going crazy rn!",
+                "Oh no no no no! That's not it! Chat is losing it!",
+                "KEKW that guess was TERRIBLE! Chat I can't do this!",
+                "Oh my goodness gracious! That guess is AWFUL! Chat help!",
+            ].into_iter().map(String::from).collect(),
+            vec![
+                "CHAT! CHAT! They're getting close! LETS GOOO!",
+                "Oh we are SO close! Chat is going feral rn!",
+                "YOOO almost! Don't mess it up! Chat believes in you!",
+            ].into_iter().map(String::from).collect(),
+            "🟩 YOOO THEY GOT IT! CHAT! CHAT! LETS GOOO! That was INSANE!",
+            "🎮 Oh my goodness we are SO cooked. The word was",
+        ),
+        Roaster::GenX => (
+            vec![
+                "Whatever. That guess was wrong. Not surprising.",
+                "Cool guess. Super wrong. Classic.",
+                "Yeah no. That's not it. Obviously.",
+                "Sure, guess that. See how far it gets you. Spoiler: not far.",
+            ].into_iter().map(String::from).collect(),
+            vec![
+                "Fine, you're getting warmer. Whatever.",
+                "Okay not bad I guess. Don't let it go to your head.",
+                "Almost. Sure. Yeah.",
+            ].into_iter().map(String::from).collect(),
+            "🟩 You got it. Cool. Good for you I guess.",
+            "🙄 Whatever. You ran out of guesses. The word was",
+        ),
+        Roaster::Millennial => (
+            vec![
+                "Oh no bestie, that is NOT the word! We don't do that here!",
+                "That guess is giving 'I haven't slept in 3 days and ate cereal for dinner.'",
+                "Oof, that's giving big 'participation trophy energy', hon.",
+                "Bestie I love you but WHAT was that guess?!",
+                "That is NOT the vibe we're going for right now!",
+            ].into_iter().map(String::from).collect(),
+            vec![
+                "Okay we're getting somewhere! Very 'glow-up' energy!",
+                "Yas! Getting warmer! You're literally thriving!",
+                "So close bestie! You've got this, I literally believe in you!",
+            ].into_iter().map(String::from).collect(),
+            "🟩 YASSS BESTIE! You got it! This is literally iconic! So proud!",
+            "📱 Bestie no... that was a whole journey for nothing. The word was",
+        ),
+        Roaster::GenZ => (
+            vec![
+                "No cap that guess was lowkey terrible fr fr.",
+                "Bestie that is NOT it. That's giving dictionary crimes.",
+                "That guess said 'I do not know how to spell' and honestly same but still.",
+                "That was an absolute ratio. You got ratio'd by the dictionary.",
+                "Bro that guess ate nothing. Left nothing on the plate.",
+            ].into_iter().map(String::from).collect(),
+            vec![
+                "Okay lowkey you're kind of eating rn! Keep going!",
+                "Bestie you're literally glowing up with these guesses fr!",
+                "No cap that was bussin! So close tho!",
+            ].into_iter().map(String::from).collect(),
+            "🟩 YOOO YOU ATE THAT WORD UP! No cap bestie you SLAY! 💀🟩",
+            "💀 You are so cooked fr fr. The word was",
+        ),
+    }
+}
+
+/// Play a round of Wordle. Returns (won, guess_count, elapsed_secs).
+fn play_wordle(roaster: Roaster, profane: bool) -> (bool, u32, u64) {
+    // Pick a random 5-letter word (validated at selection time).
+    let valid_words: Vec<&str> = WORDLE_WORDS.iter()
+        .copied()
+        .filter(|w| w.len() == 5)
+        .collect();
+    let word = valid_words[rand::thread_rng().gen_range(0..valid_words.len())];
+    let secret: Vec<char> = word.to_uppercase().chars().collect();
+
+    let max_guesses = 6u32;
+    let round_start = Instant::now();
+
+    let (mut guess_jibes, mut close_jibes, win_message, loss_prefix) =
+        wordle_roaster_jibes(roaster);
+
+    // Apply profanity filter.
+    if !profane {
+        guess_jibes = guess_jibes
+            .into_iter()
+            .filter(|j| !BAD_WORDS.iter().any(|&w| j.to_lowercase().contains(w)))
+            .collect();
+        if guess_jibes.is_empty() {
+            guess_jibes.push(String::from("Wrong guess! Try again."));
+        }
+        close_jibes = close_jibes
+            .into_iter()
+            .filter(|j| !BAD_WORDS.iter().any(|&w| j.to_lowercase().contains(w)))
+            .collect();
+        if close_jibes.is_empty() {
+            close_jibes.push(String::from("Getting closer! Keep going!"));
+        }
+    }
+
+    println!("\n{} {} – Guess the 5-letter word!",
+        col(BOLD, "🟩 WORDLE"),
+        col(CYAN, roaster.name()),
+    );
+    println!("You have {} attempts. Each guess must be exactly 5 letters.",
+        col(YELLOW, max_guesses.to_string()));
+    println!("  🟩 = correct position   🟨 = wrong position   ⬛ = not in word\n");
+
+    // Board: stores (guess_chars, result) for each completed guess.
+    let mut board: Vec<(Vec<char>, Vec<LetterResult>)> = Vec::new();
+
+    // Track which letters have been tried and what their status is.
+    let mut known: std::collections::HashMap<char, LetterResult> = std::collections::HashMap::new();
+
+    loop {
+        // Reprint the board on each turn.
+        println!("{}", col(CYAN, "─".repeat(40)));
+        for (i, (g, r)) in board.iter().enumerate() {
+            println!("  Guess {}: {}", i + 1, render_wordle_row(g, r));
+        }
+        // Show empty remaining rows.
+        let remaining_rows = max_guesses as usize - board.len();
+        for _ in 0..remaining_rows {
+            println!("  {}", col("\x1b[90m", "_ _ _ _ _   ⬛ ⬛ ⬛ ⬛ ⬛"));
+        }
+        println!("{}", col(CYAN, "─".repeat(40)));
+
+        // Show keyboard hints (letters tried so far).
+        if !known.is_empty() {
+            let mut sorted_keys: Vec<char> = known.keys().copied().collect();
+            sorted_keys.sort_unstable();
+            let kb: String = sorted_keys.iter().map(|&c| {
+                let color = match known[&c] {
+                    LetterResult::Correct => GREEN,
+                    LetterResult::Present => YELLOW,
+                    LetterResult::Absent  => "\x1b[90m",
+                };
+                format!("{}{}{} ", color, c, RESET)
+            }).collect();
+            println!("🔤 Letters tried: {}", kb);
+        }
+
+        // Check win / loss before prompting next guess.
+        if let Some((_, last_r)) = board.last() {
+            if last_r.iter().all(|r| *r == LetterResult::Correct) {
+                let elapsed = round_start.elapsed().as_secs();
+                let count = board.len() as u32;
+                println!("\n{}", col(GREEN, win_message));
+                println!("🎉 Solved in {} guess{}!\n",
+                    col(BOLD, count.to_string()),
+                    if count == 1 { "" } else { "es" },
+                );
+                // Print share-able emoji grid.
+                println!("{}", col(BOLD, "📋 Your Wordle:"));
+                for (_, r) in &board {
+                    let row: String = r.iter().map(|res| match res {
+                        LetterResult::Correct => "🟩",
+                        LetterResult::Present => "🟨",
+                        LetterResult::Absent  => "⬛",
+                    }).collect::<Vec<_>>().join(" ");
+                    println!("  {}", row);
+                }
+                println!();
+                return (true, count, elapsed);
+            }
+        }
+
+        if board.len() as u32 >= max_guesses {
+            let elapsed = round_start.elapsed().as_secs();
+            println!("\n{} {}", col(RED, loss_prefix),
+                col(YELLOW, &word.to_uppercase()));
+            println!();
+            return (false, max_guesses, elapsed);
+        }
+
+        // Prompt for the next guess.
+        let guess_num = board.len() as u32 + 1;
+        print!("\n🔤 Guess {}/{}: ", guess_num, max_guesses);
+        io::stdout().flush().expect("Failed to flush stdout");
+
+        let mut input = String::new();
+        io::stdin().read_line(&mut input).expect("Failed to read line");
+        let trimmed = input.trim().to_uppercase();
+
+        // Validate: must be exactly 5 alphabetic characters.
+        if trimmed.len() != 5 || !trimmed.chars().all(|c| c.is_ascii_alphabetic()) {
+            println!("{}", col(RED, "❌ Please enter exactly 5 letters (A–Z)."));
+            continue;
+        }
+
+        let guess_chars: Vec<char> = trimmed.chars().collect();
+        let result = score_wordle_guess(&secret, &guess_chars);
+
+        // Update keyboard hints – upgrade status monotonically: Absent → Present → Correct.
+        for (&gc, res) in guess_chars.iter().zip(result.iter()) {
+            let entry = known.entry(gc).or_insert(LetterResult::Absent);
+            if *res == LetterResult::Correct {
+                // Correct always wins regardless of previous state (handles Present → Correct).
+                *entry = LetterResult::Correct;
+            } else if *res == LetterResult::Present && *entry == LetterResult::Absent {
+                *entry = LetterResult::Present;
+            }
+        }
+
+        // Count how many letters are Correct or Present (a proxy for "closeness").
+        let hits = result.iter().filter(|&&r| r != LetterResult::Absent).count();
+
+        board.push((guess_chars, result));
+
+        // Check if just won (will be handled at top of next loop iteration).
+        let just_won = board.last().map(|(_, r)| r.iter().all(|x| *x == LetterResult::Correct)).unwrap_or(false);
+        if just_won {
+            continue;
+        }
+
+        // Roaster commentary based on closeness.
+        println!();
+        if hits >= 3 {
+            let jibe = &close_jibes[rand::thread_rng().gen_range(0..close_jibes.len())];
+            println!("{}", col(YELLOW, format!("🔥 {jibe}")));
+        } else {
+            let jibe = &guess_jibes[rand::thread_rng().gen_range(0..guess_jibes.len())];
+            println!("{}", col(RED, format!("💬 {jibe}")));
+        }
+
+        // Extra encouragement when one guess away from losing.
+        if board.len() as u32 == max_guesses - 1 {
+            println!("{}", col(MAGENTA, "⚠️  Last guess! Think carefully!"));
         }
         println!();
     }
