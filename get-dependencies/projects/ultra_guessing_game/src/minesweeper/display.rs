@@ -37,7 +37,7 @@ fn adj_colour(n: u8) -> Color {
     }
 }
 
-/// Roman-numeral labels for adjacency counts 1–8 (fitting the Iron Age theme).
+/// Roman-numeral labels for adjacency counts 1–8 (fitting the Ultra theme).
 fn roman(n: u8) -> &'static str {
     match n {
         1 => "I",

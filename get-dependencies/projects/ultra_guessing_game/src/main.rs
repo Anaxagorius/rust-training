@@ -1,6 +1,7 @@
 mod blackjack;
 mod checkers;
 mod chess;
+mod gui;
 mod minesweeper;
 mod poker;
 mod tic_tac_toe;
@@ -368,10 +369,67 @@ impl Achievement {
     }
 }
 
+fn game_mode_from_index(idx: u8) -> Option<GameMode> {
+    match idx {
+        1 => Some(GameMode::GuessingGame),
+        2 => Some(GameMode::Hangman),
+        3 => Some(GameMode::Wordle),
+        4 => Some(GameMode::Minesweeper),
+        5 => Some(GameMode::Checkers),
+        6 => Some(GameMode::Chess),
+        7 => Some(GameMode::TicTacToe),
+        8 => Some(GameMode::Blackjack),
+        9 => Some(GameMode::Poker),
+        _ => None,
+    }
+}
+
 fn main() {
+    let args: Vec<String> = std::env::args().collect();
+
+    // --cli flag: run in original command-line mode
+    if args.contains(&"--cli".to_string()) {
+        run_cli_session(None);
+        return;
+    }
+
+    // --game N flag: run that specific game in CLI mode
+    if let Some(pos) = args.iter().position(|a| a == "--game") {
+        if let Some(idx) = args.get(pos + 1).and_then(|s| s.parse::<u8>().ok()) {
+            if let Some(mode) = game_mode_from_index(idx) {
+                run_cli_session(Some(mode));
+                return;
+            }
+        }
+    }
+
+    // Default: open GUI launcher, then run selected game in terminal, loop.
+    loop {
+        match gui::run_launcher() {
+            Some(idx) => {
+                if let Some(mode) = game_mode_from_index(idx) {
+                    run_cli_session(Some(mode));
+                }
+                // After session ends, the GUI will reopen (next loop iteration).
+            }
+            None => {
+                // User closed the GUI window – exit.
+                break;
+            }
+        }
+    }
+}
+
+fn run_cli_session(initial_mode: Option<GameMode>) {
     print_banner();
 
-    let game_mode = ask_game_mode();
+    let game_mode = if let Some(m) = initial_mode {
+        // Briefly show which game was launched from the GUI.
+        println!("{}", col(CYAN, "─".repeat(62)));
+        m
+    } else {
+        ask_game_mode()
+    };
     let roaster = ask_roaster();
     print_roaster_intro(roaster);
 
@@ -395,6 +453,7 @@ fn main() {
     // Hangman stats
     let mut total_wins  = 0u32;
     let mut total_wrong = 0u32;
+
 
     loop {
         match game_mode {
@@ -562,7 +621,7 @@ fn main() {
             }
 
             GameMode::Minesweeper => {
-                println!("\n{}", col(YELLOW, "💣 Launching Iron Age Minesweeper…"));
+                println!("\n{}", col(YELLOW, "💣 Launching Ultra Minesweeper…"));
                 println!("{}", col(CYAN, "  (Use arrow keys to navigate, Space/Enter to reveal, F to flag, R to restart, Q to quit)"));
                 println!("{}", col(CYAN, "─".repeat(62)));
 
@@ -618,7 +677,7 @@ fn main() {
             }
 
             GameMode::Checkers => {
-                println!("\n{}", col(YELLOW, "♟  Launching Iron Age Checkers…"));
+                println!("\n{}", col(YELLOW, "♟  Launching Ultra Checkers…"));
                 println!("{}", col(CYAN, "  (Arrow keys: move cursor | Enter/Space: select/move | Esc: deselect | Q: quit)"));
                 println!("{}", col(CYAN, "─".repeat(62)));
 
@@ -671,7 +730,7 @@ fn main() {
             }
 
             GameMode::Chess => {
-                println!("\n{}", col(YELLOW, "♔ Launching Iron Age Chess…"));
+                println!("\n{}", col(YELLOW, "♔ Launching Ultra Chess…"));
                 println!("{}", col(CYAN, "  (Arrow keys / hjkl: move cursor | Enter/Space: select/move | Esc: deselect | R: restart | Q: quit)"));
                 println!("{}", col(CYAN, "─".repeat(62)));
 
@@ -727,7 +786,7 @@ fn main() {
             }
 
             GameMode::TicTacToe => {
-                println!("\n{}", col(YELLOW, "✕ Launching Iron Age Tic Tac Toe…"));
+                println!("\n{}", col(YELLOW, "✕ Launching Ultra Tic Tac Toe…"));
                 println!("{}", col(CYAN, "  (Arrow keys / WASD / hjkl: move cursor | Enter / Space: place | R: restart | Q: quit)"));
                 println!("{}", col(CYAN, "─".repeat(62)));
 
@@ -835,7 +894,7 @@ fn main() {
             }
 
             GameMode::Poker => {
-                println!("\n{}", col(YELLOW, "♠  Launching Iron Age Texas Hold'em Poker…"));
+                println!("\n{}", col(YELLOW, "♠  Launching Ultra Texas Hold'em Poker…"));
                 println!("{}", col(CYAN, "─".repeat(62)));
 
                 let roaster_idx = roaster.index();
@@ -940,7 +999,7 @@ fn print_banner() {
     println!();
     println!("  {} {}",
         col(YELLOW, "4."),
-        col(BOLD, "💣 Iron Age Minesweeper")
+        col(BOLD, "💣 Ultra Minesweeper")
     );
     println!("     Navigate a cursed ruin and flag every goblin trap!");
     println!("     – 3 difficulty levels: Peasant, Knight, Champion");
@@ -948,7 +1007,7 @@ fn print_banner() {
     println!();
     println!("  {} {}",
         col(YELLOW, "5."),
-        col(BOLD, "♟  Iron Age Checkers")
+        col(BOLD, "♟  Ultra Checkers")
     );
     println!("     Outmanoeuvre the AI on the ancient 8×8 board!");
     println!("     – Full American checkers rules: mandatory captures, kings, multi-jumps");
@@ -956,7 +1015,7 @@ fn print_banner() {
     println!();
     println!("  {} {}",
         col(YELLOW, "6."),
-        col(BOLD, "♔  Iron Age Chess")
+        col(BOLD, "♔  Ultra Chess")
     );
     println!("     Face the AI across the 64-square battlefield – single player!");
     println!("     – Full chess rules: castling, en passant, promotion, check & checkmate");
@@ -964,7 +1023,7 @@ fn print_banner() {
     println!();
     println!("  {} {}",
         col(YELLOW, "7."),
-        col(BOLD, "✕  Iron Age Tic Tac Toe")
+        col(BOLD, "✕  Ultra Tic Tac Toe")
     );
     println!("     Face the AI on the classic 3×3 grid – can you outwit it?");
     println!("     – Minimax AI opponent (80 % optimal + 20 % random to keep it fun)");
@@ -972,7 +1031,7 @@ fn print_banner() {
     println!();
     println!("  {} {}",
         col(YELLOW, "8."),
-        col(BOLD, "🃏  Iron Age Blackjack")
+        col(BOLD, "🃏  Ultra Blackjack")
     );
     println!("     Beat the dealer to 21 without going over!");
     println!("     – Bet chips across multiple hands in a single session");
@@ -980,7 +1039,7 @@ fn print_banner() {
     println!();
     println!("  {} {}",
         col(YELLOW, "9."),
-        col(BOLD, "♠   Iron Age Texas Hold'em Poker")
+        col(BOLD, "♠   Ultra Texas Hold'em Poker")
     );
     println!("     Full Texas Hold'em with animated card dealing!");
     println!("     – 52-card deck  │  Up to 3 AI opponents  │  4 difficulty levels");
@@ -1849,12 +1908,12 @@ fn ask_game_mode() -> GameMode {
     println!("  1. 🎲 Number Guessing Game – Guess the secret number with roaster commentary!");
     println!("  2. 💀 Hangman              – Guess the hidden word letter by letter!");
     println!("  3. 🟩 Wordle               – Guess the 5-letter word in 6 tries!");
-    println!("  4. 💣 Iron Age Minesweeper – Clear the cursed ruins without hitting a trap!");
-    println!("  5. ♟  Iron Age Checkers    – Outmanoeuvre the AI on the ancient board!");
-    println!("  6. ♔  Iron Age Chess       – Face the AI on the 64-square battlefield!");
-    println!("  7. ✕  Iron Age Tic Tac Toe – Outwit the AI on the classic 3×3 grid!");
-    println!("  8. 🃏 Iron Age Blackjack   – Beat the dealer to 21 without going over!");
-    println!("  9. ♠  Iron Age Poker       – Texas Hold'em with animated cards and roaster opponents!");
+    println!("  4. 💣 Ultra Minesweeper – Clear the cursed ruins without hitting a trap!");
+    println!("  5. ♟  Ultra Checkers    – Outmanoeuvre the AI on the ancient board!");
+    println!("  6. ♔  Ultra Chess       – Face the AI on the 64-square battlefield!");
+    println!("  7. ✕  Ultra Tic Tac Toe – Outwit the AI on the classic 3×3 grid!");
+    println!("  8. 🃏 Ultra Blackjack   – Beat the dealer to 21 without going over!");
+    println!("  9. ♠  Ultra Poker       – Texas Hold'em with animated cards and roaster opponents!");
     loop {
         print!("\n🎯 Your choice (1-9): ");
         io::stdout().flush().expect("Failed to flush stdout");
@@ -2599,7 +2658,7 @@ fn play_wordle(roaster: Roaster, profane: bool) -> (bool, u32, u64) {
     }
 }
 
-// ── Iron Age Tic Tac Toe ──────────────────────────────────────────────────────
+// ── Ultra Tic Tac Toe ──────────────────────────────────────────────────────
 
 /// Run a full Tic Tac Toe session (play → optional restart → return).
 /// Returns `(player_won, was_drawn, player_moves_in_last_game)`.
@@ -2769,7 +2828,7 @@ fn play_minesweeper() -> (bool, minesweeper::board::Level, u64) {
     (won_any, last_level, total_secs)
 }
 
-// ── Iron Age Checkers ─────────────────────────────────────────────────────────
+// ── Ultra Checkers ─────────────────────────────────────────────────────────
 
 /// Run a full checkers session (play → optional restart → return).
 /// Returns `(player_won, kings_appeared_during_game, total_elapsed_secs)`.
@@ -2877,7 +2936,7 @@ fn play_checkers() -> (bool, bool, u64) {
     (player_won, kings_ever, total_secs)
 }
 
-// ── Iron Age Chess ────────────────────────────────────────────────────────────
+// ── Ultra Chess ────────────────────────────────────────────────────────────
 
 /// Run a full chess session (play → optional restart → return).
 /// Returns `(player_won, total_move_count, ai_ever_had_queen, total_elapsed_secs)`.
