@@ -1049,7 +1049,6 @@ fn betting_round(
             }
         } else {
             // AI player
-            let hole = players[idx].hole.clone();
             let ai_idx = idx;
             let rl_idx = players[idx].roaster_idx.unwrap_or(9);
             let rl = &roaster_lines[rl_idx % roaster_lines.len()];
@@ -1063,7 +1062,6 @@ fn betting_round(
                         col(RED, "Folds"),
                         col(MAGENTA, rl.on_fold),
                     );
-                    let _ = hole;
                 }
                 AiAction::Check => {
                     if to_call > 0 {
