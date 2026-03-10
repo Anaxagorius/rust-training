@@ -364,6 +364,10 @@ pub fn handle_command(input: &str, state: &mut GameState) -> CommandResult {
             display::world_map_display(&state.world)
         }
 
+        "dice" | "play" => {
+            play_dice(state, arg)
+        }
+
         "quit" | "exit" => return CommandResult::Quit,
 
         _ => format!("Unknown command: '{}'. Type 'help' for a list of commands.", cmd),
@@ -1032,4 +1036,124 @@ fn maybe_encounter(state: &mut GameState, difficulty: u32) -> Vec<String> {
         let msg = run_combat_with(state, enemy, &template_id, &mut rng);
         vec![msg]
     }
+}
+
+// ── Dice minigame ─────────────────────────────────────────────────────────────
+
+/// `dice <bet>` — play a game of dice in a populated area (Village).
+///
+/// Rules: player and opponent each roll 2d6. Highest total wins the pot.
+/// Ties are a push (no gold changes hands). Winning advances the
+/// `dice_champion` quest objective.
+fn play_dice(state: &mut GameState, arg: &str) -> String {
+    use iron_age_world::RegionType;
+
+    // Must be in a Village to gamble (populated settlement areas only)
+    let in_populated_area = state.world.current_location()
+        .map(|l| matches!(l.region_type, RegionType::Village))
+        .unwrap_or(false);
+
+    // Also allow the merchant's crossing docks (adjacent to the village settlement)
+    let loc_id = state.world.current_location().map(|l| l.id.clone()).unwrap_or_default();
+    let in_docks = loc_id == "merchants_crossing_docks";
+
+    if !in_populated_area && !in_docks {
+        return "You need to be in a populated area to play dice. \
+                Try visiting a village or Merchant's Crossing."
+            .to_string();
+    }
+
+    // Parse bet amount
+    let bet: u32 = match arg.trim().parse() {
+        Ok(n) if n > 0 => n,
+        _ => {
+            return "How much do you want to bet? e.g. 'dice 5' to wager 5 gold. \
+                    Minimum bet is 1 gold."
+                .to_string();
+        }
+    };
+
+    if state.gold < bet {
+        return format!(
+            "You only have {} gold. You can't bet {}.",
+            state.gold, bet
+        );
+    }
+
+    // Roll dice. Combine nanoseconds with turn counter (multiplied by a prime)
+    // to ensure the seed varies between calls even within the same second.
+    let seed_prime_offset: u64 = 13; // prime multiplier for per-turn variation
+    let mut rng = rand::rngs::StdRng::seed_from_u64(
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map_or(state.turn as u64, |d| {
+                d.subsec_nanos() as u64 + state.turn as u64 * seed_prime_offset
+            })
+    );
+
+    let player_d1: u32 = rng.gen_range(1..=6);
+    let player_d2: u32 = rng.gen_range(1..=6);
+    let player_total = player_d1 + player_d2;
+
+    let opponent_d1: u32 = rng.gen_range(1..=6);
+    let opponent_d2: u32 = rng.gen_range(1..=6);
+    let opponent_total = opponent_d1 + opponent_d2;
+
+    let mut out = format!(
+        "🎲 ── Dice Game ── (Bet: {} gold)\n\
+         You roll: [{} + {}] = {}\n\
+         Opponent: [{} + {}] = {}\n",
+        bet,
+        player_d1, player_d2, player_total,
+        opponent_d1, opponent_d2, opponent_total,
+    );
+
+    if player_total > opponent_total {
+        // Player wins
+        state.gold += bet;
+        out.push_str(&format!(
+            "🏆 You win! +{} gold (total: {})\n",
+            bet, state.gold
+        ));
+        // Advance the dice_champion quest win counter
+        let dice_msgs = advance_dice_quest(state);
+        for m in dice_msgs { out.push_str(&format!("  {}\n", m)); }
+    } else if opponent_total > player_total {
+        // Opponent wins
+        state.gold -= bet;
+        out.push_str(&format!(
+            "💸 Opponent wins. -{} gold (total: {})\n",
+            bet, state.gold
+        ));
+    } else {
+        // Tie
+        out.push_str("🤝 It's a tie! No gold changes hands.\n");
+    }
+
+    out
+}
+
+/// Advance the `dice_champion` quest's SurviveRounds objective by 1 win.
+fn advance_dice_quest(state: &mut GameState) -> Vec<String> {
+    use iron_age_narrative::ObjectiveKind;
+    let mut messages = Vec::new();
+    if let Some(quest) = state.quest_log.quests.get_mut("dice_champion") {
+        if quest.is_active() {
+            for obj in &mut quest.objectives {
+                if let ObjectiveKind::SurviveRounds { rounds, survived } = &mut obj.kind {
+                    if survived < rounds {
+                        *survived += 1;
+                        messages.push(format!("[Quest: {}] Updated.", quest.name));
+                        if *survived >= *rounds {
+                            messages.push(format!(
+                                "[Quest: {}] All objectives complete! Return to dice_master_brom.",
+                                quest.name
+                            ));
+                        }
+                    }
+                }
+            }
+        }
+    }
+    messages
 }

@@ -318,6 +318,7 @@ pub fn build_starting_world() -> WorldMap {
         .with_exit(Exit::new("south", "kings_road_south", "The road south toward Thornvale."))
         .with_exit(Exit::new("north", "ironmere_approach", "North toward the ruined keep."))
         .with_exit(Exit::new("east", "ashwood_clearing", "Into the heart of Ashwood Forest."))
+        .with_exit(Exit::new("west", "merchants_crossing", "West along a fork of the old road leads to a busy river crossing."))
         .with_enemy_spawn("wolf")
         .with_enemy_spawn("goblin_scout"),
     );
@@ -627,6 +628,7 @@ pub fn build_starting_world() -> WorldMap {
             RegionType::Mountains,
         )
         .with_exit(Exit::new("south", "valley_north", "South back down into the valley."))
+        .with_exit(Exit::new("north", "frostpeak_approach", "North into the ice-scoured heights where the mountains pierce the clouds."))
         .with_npc("ranger_vex")
         .with_enemy_spawn("stone_troll")
         .with_enemy_spawn("mountain_goat"),
@@ -642,6 +644,7 @@ pub fn build_starting_world() -> WorldMap {
             RegionType::Mountains,
         )
         .with_exit(Exit::new("east", "valley_west", "East back down to the valley floor."))
+        .with_exit(Exit::new("north", "iron_quarry_entrance", "North toward the sound of picks striking stone — an active quarry."))
         .with_enemy_spawn("giant_bat")
         .with_enemy_spawn("stone_troll"),
     );
@@ -658,6 +661,7 @@ pub fn build_starting_world() -> WorldMap {
         )
         .with_exit(Exit::new("north", "valley_south_meadow", "North back into the valley meadows."))
         .with_exit(Exit::new("east", "valley_tomb_approach", "East toward the sealed tomb gateway."))
+        .with_exit(Exit::new("south", "ember_coast_shore", "South through a mountain pass, the salt tang of the sea grows strong."))
         .with_enemy_spawn("mountain_goat")
         .with_enemy_spawn("stone_troll"),
     );
@@ -1014,6 +1018,219 @@ pub fn build_starting_world() -> WorldMap {
         .with_enemy_spawn("mummified_guard")
         .with_enemy_spawn("wraith")
         .with_loot_table("tomb_sanctum"),
+    );
+
+    // =========================================================
+    // --- Zone 1: Ember Coast ---
+    // A rugged sea coast at the southern foot of the mountains.
+    // =========================================================
+    map.add_location(
+        Location::new(
+            "ember_coast_shore",
+            "Ember Coast — Shore",
+            "The southern mountains give way abruptly to a rocky coast of dark stone and crashing waves. \
+             Sea mist rolls in from the grey water, obscuring shapes in the surf. The ruins of an old \
+             sea-fort can be seen on a promontory to the east. Saltstone crabs pick at the tidepools. \
+             Coastal raiders have beached longboats on the shingle — signs of a recent landing.",
+            RegionType::Coast,
+        )
+        .with_exit(Exit::new("north", "south_mountain_foothills", "North back through the mountain pass."))
+        .with_exit(Exit::new("east", "ember_coast_ruins", "East along the coast toward the old sea-fort ruins."))
+        .with_enemy_spawn("saltstone_crab")
+        .with_enemy_spawn("coastal_raider")
+        .with_enemy_spawn("sea_serpent")
+        .with_loot_table("ember_coast_shore"),
+    );
+
+    map.add_location(
+        Location::new(
+            "ember_coast_ruins",
+            "Ember Coast — Sea-Fort Ruins",
+            "The crumbling remains of an iron-age sea-fort stand on a wave-battered promontory. \
+             The outer walls still stand to shoulder height; the interior is a maze of collapsed \
+             towers and silted courtyards. Coastal raiders have made the most defensible corner \
+             their own — fires burn in braziers and stolen goods are piled high. \
+             A cleft in the eastern wall descends toward the sunken temple below the cliff face.",
+            RegionType::Ruins,
+        )
+        .with_exit(Exit::new("west", "ember_coast_shore", "West along the coast back to the shore."))
+        .with_exit(Exit::new("down", "sunken_temple_entrance", "Down through the cliff cleft into the sunken temple."))
+        .with_npc("fisherman_aldric")
+        .with_enemy_spawn("coastal_raider")
+        .with_enemy_spawn("tide_wraith")
+        .with_enemy_spawn("sea_serpent")
+        .with_loot_table("ember_coast_ruins"),
+    );
+
+    // =========================================================
+    // --- Zone 2: Iron Quarry ---
+    // A mountain quarry once used to mine iron ore.
+    // =========================================================
+    map.add_location(
+        Location::new(
+            "iron_quarry_entrance",
+            "Iron Quarry — Entrance",
+            "A wide terraced quarry cut into the side of the western mountains. The walls are \
+             striped with veins of iron ore. Abandoned mining equipment rusts in piles — pick-axes, \
+             ore carts, a broken crane. Quarry bandits have seized the site and defend it \
+             aggressively, mining ore to sell illegally. Mine crawlers infest the lower tunnels. \
+             A dark tunnel mouth leads down into the quarry depths.",
+            RegionType::Mountains,
+        )
+        .with_exit(Exit::new("south", "west_mountain_crags", "South back down to the western mountain crags."))
+        .with_exit(Exit::new("down", "iron_quarry_depths", "Down into the lower quarry tunnels."))
+        .with_npc("mining_overseer")
+        .with_enemy_spawn("quarry_bandit")
+        .with_enemy_spawn("mine_crawler")
+        .with_loot_table("iron_quarry_entrance"),
+    );
+
+    map.add_location(
+        Location::new(
+            "iron_quarry_depths",
+            "Iron Quarry — Depths",
+            "The deepest level of the quarry is rich with ore but treacherous — unstable \
+             walls groan and the floor is riddled with mine crawler burrows. A rock wyrm has \
+             claimed the lowest seam, drawn by the dense iron deposits. An iron golem stands \
+             motionless near the deepest vein, reactivated by the quarry bandits as a guardian \
+             construct — though they can no longer fully control it. The air reeks of iron and \
+             old sweat.",
+            RegionType::Dungeon,
+        )
+        .with_exit(Exit::new("up", "iron_quarry_entrance", "Up back to the quarry entrance."))
+        .with_enemy_spawn("rock_wyrm")
+        .with_enemy_spawn("iron_golem")
+        .with_enemy_spawn("mine_crawler")
+        .with_loot_table("iron_quarry_depths"),
+    );
+
+    // =========================================================
+    // --- Zone 3: Sunken Temple ---
+    // An ancient temple, half-submerged beneath the coastal cliffs.
+    // =========================================================
+    map.add_location(
+        Location::new(
+            "sunken_temple_entrance",
+            "Sunken Temple — Entrance",
+            "A passage through the cliff opens into the upper chambers of an ancient temple \
+             — half-drowned by centuries of tidal flooding. The walls are carved with serpents \
+             and coiling sea-gods. Waterlogged offerings still rest on stone altars. Temple \
+             serpents have made the flooded antechambers their home, and cursed acolytes — the \
+             reanimated servants of the old faith — patrol the drier upper passages. \
+             The inner sanctum lies deeper below the waterline.",
+            RegionType::Ruins,
+        )
+        .with_exit(Exit::new("up", "ember_coast_ruins", "Up through the cliff passage back to the sea-fort ruins."))
+        .with_exit(Exit::new("down", "sunken_temple_sanctum", "Down through flooded passages into the sanctum."))
+        .with_enemy_spawn("temple_serpent")
+        .with_enemy_spawn("cursed_acolyte")
+        .with_enemy_spawn("tide_wraith")
+        .with_loot_table("sunken_temple_entrance"),
+    );
+
+    map.add_location(
+        Location::new(
+            "sunken_temple_sanctum",
+            "Sunken Temple — Sanctum",
+            "The inner sanctum of the Sunken Temple is an enormous circular chamber, \
+             its domed ceiling intact above the waterline. The altar at the centre is \
+             draped in sea-growths and barnacles but the offerings upon it remain — \
+             coins, relics, and weapons placed by the faithful an age ago. Temple guardian \
+             spirits swirl at the threshold, and a bone colossus — assembled from the \
+             remains of the temple's past victims — stands sentinel before the altar. \
+             This is the temple's final defence.",
+            RegionType::Dungeon,
+        )
+        .with_exit(Exit::new("up", "sunken_temple_entrance", "Up back to the temple entrance."))
+        .with_enemy_spawn("idol_construct")
+        .with_enemy_spawn("temple_guardian_spirit")
+        .with_enemy_spawn("bone_colossus")
+        .with_loot_table("sunken_temple_sanctum"),
+    );
+
+    // =========================================================
+    // --- Zone 4: Frostpeak Summit ---
+    // The frozen heights above the northern mountain pass.
+    // =========================================================
+    map.add_location(
+        Location::new(
+            "frostpeak_approach",
+            "Frostpeak — Approach",
+            "Above the northern mountain pass the world turns white. Ice coats the rocks \
+             and the wind carries flecks of snow even in high summer. Frost wolves hunt \
+             in packs through the drifts, and snow eagles circle overhead. The path \
+             narrows to a ledge blasted by crosswinds — only the sure-footed and \
+             well-prepared should attempt the summit. Frozen in the cliff face, \
+             the preserved form of a past adventurer serves as a grim warning.",
+            RegionType::Mountains,
+        )
+        .with_exit(Exit::new("south", "north_mountain_pass", "South back down to the mountain pass."))
+        .with_exit(Exit::new("north", "frostpeak_summit", "North up the icebound path toward the summit."))
+        .with_enemy_spawn("frost_wolf")
+        .with_enemy_spawn("snow_eagle")
+        .with_enemy_spawn("ice_troll")
+        .with_loot_table("frostpeak_approach"),
+    );
+
+    map.add_location(
+        Location::new(
+            "frostpeak_summit",
+            "Frostpeak — Summit",
+            "The summit of Frostpeak is a small plateau of wind-scoured ice. The view \
+             stretches the length of Embervale — the valley is tiny far below, Thornvale \
+             a cluster of dots. Abandoned gear of past expeditions lies frozen in the ice. \
+             A glacial wraith drifts through the summit winds — the spirit of a mountaineer \
+             who perished here, now bound to this freezing height. An ice troll hunches \
+             in a hollow of ice, glaring at newcomers with murderous patience. \
+             Ancient carved stones mark this as a sacred site.",
+            RegionType::Mountains,
+        )
+        .with_exit(Exit::new("south", "frostpeak_approach", "South back down to the approach."))
+        .with_npc("frost_sage")
+        .with_enemy_spawn("glacial_wraith")
+        .with_enemy_spawn("ice_troll")
+        .with_enemy_spawn("frost_wolf")
+        .with_loot_table("frostpeak_summit"),
+    );
+
+    // =========================================================
+    // --- Zone 5: Merchant's Crossing ---
+    // A small populated settlement at a river ford on the King's Road.
+    // A dice game can be played here.
+    // =========================================================
+    map.add_location(
+        Location::new(
+            "merchants_crossing",
+            "Merchant's Crossing",
+            "A busy ford on the river that divides the valley. A stone bridge — old but \
+             sturdy — carries the road over the water. Around it a lively settlement of \
+             traders, travellers, and river folk has grown. Tents and wagons fill a muddy \
+             market square. The smell of food and the clink of coins fill the air. \
+             A riverside tavern buzzes with noise — dice games are in progress at every \
+             table, and the locals are confident you can't beat them.",
+            RegionType::Village,
+        )
+        .with_exit(Exit::new("east", "kings_road_fork", "East back along the road to the King's Road fork."))
+        .with_exit(Exit::new("south", "merchants_crossing_docks", "South down to the river docks."))
+        .with_npc("merchant_aldis")
+        .with_npc("dice_master_brom"),
+    );
+
+    map.add_location(
+        Location::new(
+            "merchants_crossing_docks",
+            "Merchant's Crossing — River Docks",
+            "The riverside docks below the crossing are lined with flat-bottomed trading \
+             barges. River men load and unload goods from up and down the valley waterway. \
+             River serpents lurk in the shallows, kept away by the lanterns the dock-hands \
+             hang from poles. A barge-master trades in river salvage and exotic goods brought \
+             from afar. Harpies circle the storage sheds, stealing anything shiny.",
+            RegionType::Coast,
+        )
+        .with_exit(Exit::new("north", "merchants_crossing", "North back up to the crossing settlement."))
+        .with_npc("barge_master_finn")
+        .with_enemy_spawn("river_serpent")
+        .with_enemy_spawn("harpy"),
     );
 
     // Mark the starting location as visited
