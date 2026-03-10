@@ -1,8 +1,10 @@
+use crossterm::{cursor, queue, terminal::ClearType};
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 use std::fmt;
 use std::io::{self, Write};
-use std::time::Instant;
+use std::thread;
+use std::time::{Duration, Instant};
 
 // ── ANSI helpers (mirrored from main.rs) ─────────────────────────────────────
 const RESET: &str = "\x1b[0m";
@@ -145,6 +147,10 @@ impl Deck {
     pub fn deal(&mut self) -> Card {
         self.cards.pop().expect("deck is empty")
     }
+
+    pub fn remaining(&self) -> usize {
+        self.cards.len()
+    }
 }
 
 // ── Hand ──────────────────────────────────────────────────────────────────────
@@ -216,7 +222,165 @@ fn read_line() -> String {
     buf.trim().to_lowercase().to_string()
 }
 
-fn display_table(player: &Hand, dealer: &Hand, hide_dealer: bool) {
+// ── Card-flip animation ───────────────────────────────────────────────────────
+
+/// Height (in terminal lines) of a single card art block.
+const CARD_HEIGHT: u16 = 5;
+
+/// Build the lines for a face-down card frame.
+/// `inner_w` is the number of character columns between the `│` borders.
+/// When `inner_w == 0` the frame collapses to a bare vertical stroke.
+fn back_frame(inner_w: usize) -> Vec<String> {
+    if inner_w == 0 {
+        return (0..CARD_HEIGHT as usize)
+            .map(|_| format!(" {}│{}", YELLOW, RESET))
+            .collect();
+    }
+    let bar  = "─".repeat(inner_w);
+    let fill = format!("{}{}{}", YELLOW, "░".repeat(inner_w), RESET);
+    vec![
+        format!(" ┌{}┐", bar),
+        format!(" │{}│", fill),
+        format!(" │{}│", fill),
+        format!(" │{}│", fill),
+        format!(" └{}┘", bar),
+    ]
+}
+
+/// Build the lines for a face-up card frame.
+fn face_frame(card: &Card, inner_w: usize) -> Vec<String> {
+    let r     = card.rank.label();    // "A", "2".."K", "10"
+    let s     = card.suit.symbol();   // "♣" etc.
+    let c     = card.suit.color();    // ANSI colour prefix or RESET
+    let r_len = r.len();              // visible columns (1 for most, 2 for "10")
+
+    if inner_w == 0 {
+        return (0..CARD_HEIGHT as usize)
+            .map(|_| format!(" {}│{}", c, RESET))
+            .collect();
+    }
+
+    let bar = "─".repeat(inner_w);
+
+    // Top row: rank left-aligned
+    let top = if inner_w >= r_len {
+        format!(" │{}{}{}{}{}│",
+            c, BOLD, r, RESET, " ".repeat(inner_w - r_len))
+    } else {
+        format!(" │{}│", " ".repeat(inner_w))
+    };
+
+    // Middle row: suit symbol centred
+    let lpad = inner_w.saturating_sub(1) / 2;
+    let rpad = inner_w.saturating_sub(1 + lpad);
+    let mid = format!(" │{}{}{}{}{}│",
+        " ".repeat(lpad), c, s, RESET, " ".repeat(rpad));
+
+    // Bottom row: rank right-aligned
+    let bot = if inner_w >= r_len {
+        format!(" │{}{}{}{}{}│",
+            " ".repeat(inner_w - r_len), c, BOLD, r, RESET)
+    } else {
+        format!(" │{}│", " ".repeat(inner_w))
+    };
+
+    vec![
+        format!(" ┌{}┐", bar),
+        top,
+        mid,
+        bot,
+        format!(" └{}┘", bar),
+    ]
+}
+
+/// Erase `CARD_HEIGHT` lines above the current cursor position.
+fn clear_card_area(out: &mut impl Write) {
+    queue!(out, cursor::MoveUp(CARD_HEIGHT)).unwrap();
+    for _ in 0..CARD_HEIGHT {
+        queue!(out,
+            cursor::MoveToColumn(0),
+            crossterm::terminal::Clear(ClearType::CurrentLine),
+            cursor::MoveDown(1)
+        ).unwrap();
+    }
+    queue!(out, cursor::MoveUp(CARD_HEIGHT)).unwrap();
+}
+
+/// Animate a card flip.  The animation draws `CARD_HEIGHT` lines, animates
+/// them in-place via crossterm cursor control, then erases those lines so the
+/// caller can proceed to print the updated table cleanly below.
+///
+/// `reveal`: when `true` the card starts face-down (back) and flips to
+/// face-up; when `false` the card is dealt face-up directly (shorter).
+fn animate_flip(card: &Card, reveal: bool) {
+    // Each phase: (inner content width, show_back, delay_ms)
+    let phases: &[(usize, bool, u64)] = if reveal {
+        // Start face-down, flip to face-up
+        &[
+            (7, true,  55),
+            (5, true,  45),
+            (3, true,  35),
+            (1, true,  30),
+            (0, true,  25), // edge
+            (0, false, 25), // edge (face side appears)
+            (1, false, 30),
+            (3, false, 35),
+            (5, false, 45),
+            (7, false, 90),
+        ]
+    } else {
+        // Deal face-up: brief squish from nothing then expand to full
+        &[
+            (0, false, 20),
+            (1, false, 30),
+            (3, false, 40),
+            (5, false, 50),
+            (7, false, 90),
+        ]
+    };
+
+    let mut out = io::stdout();
+    let mut first = true;
+
+    for &(w, is_back, delay_ms) in phases {
+        if !first {
+            queue!(out, cursor::MoveUp(CARD_HEIGHT)).unwrap();
+        }
+        first = false;
+
+        let lines = if is_back { back_frame(w) } else { face_frame(card, w) };
+        for line in &lines {
+            queue!(out,
+                cursor::MoveToColumn(0),
+                crossterm::terminal::Clear(ClearType::CurrentLine),
+                crossterm::style::Print(format!("  {}\n", line))
+            ).unwrap();
+        }
+        out.flush().unwrap();
+
+        if delay_ms > 0 {
+            thread::sleep(Duration::from_millis(delay_ms));
+        }
+    }
+
+    // Clear the animation area so subsequent output starts from a clean slate.
+    clear_card_area(&mut out);
+    out.flush().unwrap();
+}
+
+/// Animate dealing a card face-up (used for player/dealer draws).
+fn animate_deal_card(card: &Card) {
+    animate_flip(card, false);
+}
+
+/// Animate flipping the dealer's hidden card face-up.
+fn animate_reveal_card(card: &Card) {
+    animate_flip(card, true);
+}
+
+// ── Table display ─────────────────────────────────────────────────────────────
+
+fn display_table(player: &Hand, dealer: &Hand, hide_dealer: bool, deck_remaining: usize) {
     let dealer_value_str = if hide_dealer {
         format!("{}{} + ?{}", YELLOW, dealer.cards[0].rank.value(), RESET)
     } else {
@@ -234,6 +398,14 @@ fn display_table(player: &Hand, dealer: &Hand, hide_dealer: bool) {
         col(BOLD, "You:   "),
         player.display_cards(false),
         col(CYAN, player.value().to_string()),
+    );
+    println!(
+        "  {} {}",
+        col(MAGENTA, "🂠 Deck:"),
+        col(YELLOW, {
+            let s = if deck_remaining == 1 { "" } else { "s" };
+            format!("{} card{} remaining", deck_remaining, s)
+        }),
     );
 }
 
@@ -415,17 +587,26 @@ pub fn play(roaster_idx: usize, profane: bool) -> (bool, bool, u64) {
         let mut player = Hand::new();
         let mut dealer = Hand::new();
 
-        player.push(deck.deal());
-        dealer.push(deck.deal());
-        player.push(deck.deal());
+        println!("  {} Dealing cards...", col(CYAN, "🂠"));
+
+        let c = deck.deal();
+        player.push(c);
+        animate_deal_card(&c);
+        let c = deck.deal();
+        dealer.push(c);
+        animate_deal_card(&c);
+        let c = deck.deal();
+        player.push(c);
+        animate_deal_card(&c);
+        // Dealer's second card is dealt face-down; no flip animation for hidden card
         dealer.push(deck.deal());
 
-        display_table(&player, &dealer, /*hide_dealer=*/true);
+        display_table(&player, &dealer, /*hide_dealer=*/true, deck.remaining());
 
         // ── Natural blackjack check ──────────────────────────────────────────
         if player.is_blackjack() {
             println!("\n{}", col(GREEN, lines.on_blackjack));
-            display_table(&player, &dealer, false);
+            display_table(&player, &dealer, false, deck.remaining());
             if dealer.is_blackjack() {
                 println!("{}", col(MAGENTA, "  Dealer also has blackjack – it's a push!"));
                 println!("  You keep your {} chip bet.", bet);
@@ -460,8 +641,10 @@ pub fn play(roaster_idx: usize, profane: bool) -> (bool, bool, u64) {
             match action.as_str() {
                 "h" | "hit" => {
                     println!("{}", col(CYAN, lines.on_hit));
-                    player.push(deck.deal());
-                    display_table(&player, &dealer, true);
+                    let c = deck.deal();
+                    player.push(c);
+                    animate_deal_card(&c);
+                    display_table(&player, &dealer, true, deck.remaining());
                     if player.is_bust() {
                         println!("\n{}", col(RED, lines.on_bust));
                         chips = chips.saturating_sub(bet);
@@ -487,11 +670,14 @@ pub fn play(roaster_idx: usize, profane: bool) -> (bool, bool, u64) {
 
         // ── Dealer's turn (hit to 17) ────────────────────────────────────────
         println!("\n  {} reveals hidden card…", col(BOLD, "Dealer"));
-        display_table(&player, &dealer, false);
+        animate_reveal_card(&dealer.cards[1]);
+        display_table(&player, &dealer, false, deck.remaining());
 
         while dealer.value() < 17 {
-            dealer.push(deck.deal());
-            display_table(&player, &dealer, false);
+            let c = deck.deal();
+            dealer.push(c);
+            animate_deal_card(&c);
+            display_table(&player, &dealer, false, deck.remaining());
         }
 
         // ── Determine outcome ────────────────────────────────────────────────
@@ -627,5 +813,16 @@ mod tests {
     fn deck_has_52_cards() {
         let d = Deck::new_shuffled();
         assert_eq!(d.cards.len(), 52);
+    }
+
+    #[test]
+    fn deck_remaining_decrements_on_deal() {
+        let mut d = Deck::new_shuffled();
+        assert_eq!(d.remaining(), 52);
+        d.deal();
+        assert_eq!(d.remaining(), 51);
+        d.deal();
+        d.deal();
+        assert_eq!(d.remaining(), 49);
     }
 }
