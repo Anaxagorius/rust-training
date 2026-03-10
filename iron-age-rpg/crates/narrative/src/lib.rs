@@ -497,6 +497,80 @@ pub fn build_narrative() -> (NpcRegistry, QuestLog) {
         )),
     );
 
+    // NPCs outside Thornvale
+
+    npcs.register(
+        Npc::new(
+            "hermit_bogdan", "Hermit Bogdan", NpcRole::Civilian,
+            "Not many venture into the Bog-heart willingly. You've got courage, \
+             or you're a fool. Perhaps both.",
+        )
+        .with_dialogue(DialogueLine::new(
+            "hermit_bogdan",
+            "The Crystal Cave to the north holds crystal shards of great power. \
+             Crystalline dust can be brewed into potions at my alchemy stone — feel \
+             free to use it. In return, I ask only for herbs when you find them."
+        ))
+        .with_dialogue(DialogueLine::new(
+            "hermit_bogdan",
+            "The shadow gorge to the north-east is stalked by cave trolls. \
+             Iron weapons work best; they hate bright torchlight too.",
+        ).when_quest("shadow_cave_delve", QuestStatus::Active))
+        .with_shop_item("antidote")
+        .with_shop_item("herbs")
+        .with_shop_item("bog_moss")
+        .with_shop_item("nightshade_leaf")
+        .with_quest("shadow_cave_delve"),
+    );
+
+    npcs.register(
+        Npc::new(
+            "ranger_vex", "Ranger Vex", NpcRole::Guard,
+            "I patrol these mountain passes alone. It's dangerous work, but \
+             someone has to keep the road clear.",
+        )
+        .with_dialogue(DialogueLine::new(
+            "ranger_vex",
+            "The Crystal Cave glitters with promise but those golems don't \
+             take kindly to trespassers. If you're brave enough to clear them out, \
+             I'll make it worth your while."
+        ))
+        .with_dialogue(DialogueLine::new(
+            "ranger_vex",
+            "Good progress in there. The golems are weakest against blunt weapons — \
+             their crystal shells shatter rather than flex.",
+        ).when_quest("crystal_cave_clear", QuestStatus::Active))
+        .with_quest("crystal_cave_clear"),
+    );
+
+    npcs.register(
+        Npc::new(
+            "scholar_lyria", "Scholar Lyria", NpcRole::QuestGiver,
+            "Careful with those old stones! I've been cataloguing these ruins \
+             for months. You wouldn't believe what lies beneath.",
+        )
+        .with_dialogue(DialogueLine::new(
+            "scholar_lyria",
+            "The Ancient Barrow to the north-east predates Thornvale by a thousand \
+             years. Barrow knights still guard it — but the burial lord's chamber \
+             holds artefacts of immeasurable historical value. Could you retrieve \
+             the Barrow Lord's Helm for me? It would complete my research."
+        ))
+        .with_dialogue(DialogueLine::new(
+            "scholar_lyria",
+            "The Valley King's Tomb to the south-east is even older than the barrow. \
+             Legends say the Valley King's Crown was buried with him. Whoever retrieves \
+             it would be hailed as a true champion of Embervale.",
+        ).when_quest("barrow_research", QuestStatus::Active))
+        .with_dialogue(DialogueLine::new(
+            "scholar_lyria",
+            "You've found the Barrow Lord's Helm! Extraordinary. Now I wonder — \
+             dare you venture into the Valley King's Tomb? The crown must be there.",
+        ).when_quest("valley_king_tomb", QuestStatus::NotStarted))
+        .with_quest("barrow_research")
+        .with_quest("valley_king_tomb"),
+    );
+
     // ── Quests ────────────────────────────────────────────────────────────────
 
     // Quest 1: Drive back the goblins (main quest)
@@ -591,6 +665,150 @@ pub fn build_narrative() -> (NpcRegistry, QuestLog) {
         QuestReward::new(300, 30).with_item("wolf_pelt_armor"),
     ));
 
+    // Quest 4: Crystal Cave — clear the golems
+    quest_log.register(Quest::new(
+        "crystal_cave_clear",
+        "Shards of Light",
+        "Ranger Vex has asked you to clear the crystal golems from the Crystal \
+         Cave so that prospectors can safely harvest the crystal shards within.",
+        "ranger_vex",
+        vec![
+            QuestObjective {
+                description: "Reach the Crystal Cave entrance".to_string(),
+                kind: ObjectiveKind::ReachLocation {
+                    location_id: "crystal_cave_entrance".to_string(), reached: false,
+                },
+            },
+            QuestObjective {
+                description: "Defeat crystal golems (3)".to_string(),
+                kind: ObjectiveKind::KillEnemy {
+                    enemy_id: "crystal_golem".to_string(), required: 3, current: 0,
+                },
+            },
+            QuestObjective {
+                description: "Reach the Crystal Cave depths".to_string(),
+                kind: ObjectiveKind::ReachLocation {
+                    location_id: "crystal_cave_depths".to_string(), reached: false,
+                },
+            },
+        ],
+        QuestReward::new(350, 40).with_item("crystal_ring"),
+    ));
+
+    // Quest 5: Shadow Cave — cave trolls
+    quest_log.register(Quest::new(
+        "shadow_cave_delve",
+        "Darkness Below",
+        "Hermit Bogdan has warned you about cave trolls in the Shadow Gorge. \
+         Venture into the shadow cave and eliminate the troll threat.",
+        "hermit_bogdan",
+        vec![
+            QuestObjective {
+                description: "Enter the shadow gorge".to_string(),
+                kind: ObjectiveKind::ReachLocation {
+                    location_id: "shadow_gorge".to_string(), reached: false,
+                },
+            },
+            QuestObjective {
+                description: "Defeat cave trolls (3)".to_string(),
+                kind: ObjectiveKind::KillEnemy {
+                    enemy_id: "cave_troll".to_string(), required: 3, current: 0,
+                },
+            },
+            QuestObjective {
+                description: "Reach the shadow cave depths".to_string(),
+                kind: ObjectiveKind::ReachLocation {
+                    location_id: "shadow_cave_depths".to_string(), reached: false,
+                },
+            },
+        ],
+        QuestReward::new(300, 35).with_item("ancient_amulet"),
+    ));
+
+    // Quest 6: Barrow — scholar's research
+    quest_log.register(Quest::new(
+        "barrow_research",
+        "Secrets of the Barrow",
+        "Scholar Lyria needs someone to retrieve the Barrow Lord's Helm from \
+         the ancient barrow to the north-east. The interior is guarded by \
+         barrow knights and worse. Retrieve the helm and return it to Lyria \
+         in Millford Ruins.",
+        "scholar_lyria",
+        vec![
+            QuestObjective {
+                description: "Reach the barrow interior".to_string(),
+                kind: ObjectiveKind::ReachLocation {
+                    location_id: "barrow_interior".to_string(), reached: false,
+                },
+            },
+            QuestObjective {
+                description: "Defeat barrow knights (2)".to_string(),
+                kind: ObjectiveKind::KillEnemy {
+                    enemy_id: "barrow_knight".to_string(), required: 2, current: 0,
+                },
+            },
+            QuestObjective {
+                description: "Collect the Barrow Lord's Helm".to_string(),
+                kind: ObjectiveKind::CollectItem {
+                    item_id: "barrow_lord_helm".to_string(), required: 1, current: 0,
+                },
+            },
+            QuestObjective {
+                description: "Return to Scholar Lyria".to_string(),
+                kind: ObjectiveKind::TalkToNpc {
+                    npc_id: "scholar_lyria".to_string(), talked: false,
+                },
+            },
+        ],
+        QuestReward::new(450, 60).with_item("runic_short_sword"),
+    ));
+
+    // Quest 7: Valley King's Tomb — the final challenge
+    quest_log.register(
+        Quest::new(
+            "valley_king_tomb",
+            "The Valley King's Legacy",
+            "Scholar Lyria believes the legendary Valley King's Crown lies within \
+             the Valley King's Tomb to the south-east. Navigate the antechamber \
+             and sanctum, defeat the tomb guardian, and claim the crown.",
+            "scholar_lyria",
+            vec![
+                QuestObjective {
+                    description: "Reach the tomb antechamber".to_string(),
+                    kind: ObjectiveKind::ReachLocation {
+                        location_id: "tomb_antechamber".to_string(), reached: false,
+                    },
+                },
+                QuestObjective {
+                    description: "Defeat mummified guards (2)".to_string(),
+                    kind: ObjectiveKind::KillEnemy {
+                        enemy_id: "mummified_guard".to_string(), required: 2, current: 0,
+                    },
+                },
+                QuestObjective {
+                    description: "Reach the tomb sanctum".to_string(),
+                    kind: ObjectiveKind::ReachLocation {
+                        location_id: "tomb_sanctum".to_string(), reached: false,
+                    },
+                },
+                QuestObjective {
+                    description: "Defeat the tomb guardian".to_string(),
+                    kind: ObjectiveKind::KillEnemy {
+                        enemy_id: "tomb_guardian".to_string(), required: 1, current: 0,
+                    },
+                },
+                QuestObjective {
+                    description: "Collect the Valley King's Crown".to_string(),
+                    kind: ObjectiveKind::CollectItem {
+                        item_id: "valley_king_crown".to_string(), required: 1, current: 0,
+                    },
+                },
+            ],
+            QuestReward::new(1000, 150).with_item("ancient_amulet"),
+        )
+        .with_prerequisite("barrow_research"),
+    );
+
     (npcs, quest_log)
 }
 
@@ -682,5 +900,58 @@ mod tests {
         assert!(!grund.shop_item_ids.is_empty(), "Blacksmith Grund should stock materials");
         assert!(grund.shop_item_ids.contains(&"iron_ingot".to_string()));
         assert!(grund.shop_item_ids.contains(&"leather".to_string()));
+    }
+
+    #[test]
+    fn test_new_npcs_registered() {
+        let (npcs, _) = build_narrative();
+        assert!(npcs.get("hermit_bogdan").is_some(), "Hermit Bogdan should be registered");
+        assert!(npcs.get("ranger_vex").is_some(), "Ranger Vex should be registered");
+        assert!(npcs.get("scholar_lyria").is_some(), "Scholar Lyria should be registered");
+    }
+
+    #[test]
+    fn test_hermit_bogdan_has_shop_and_quest() {
+        let (npcs, _) = build_narrative();
+        let bogdan = npcs.get("hermit_bogdan").unwrap();
+        assert!(!bogdan.shop_item_ids.is_empty());
+        assert!(bogdan.quest_ids.contains(&"shadow_cave_delve".to_string()));
+    }
+
+    #[test]
+    fn test_new_quests_registered() {
+        let (_, log) = build_narrative();
+        for qid in &["crystal_cave_clear", "shadow_cave_delve", "barrow_research", "valley_king_tomb"] {
+            assert!(log.quests.contains_key(*qid), "Quest '{}' should be registered", qid);
+        }
+    }
+
+    #[test]
+    fn test_valley_king_tomb_requires_barrow_research() {
+        let (_, mut log) = build_narrative();
+        // Should fail without prerequisite
+        let result = log.start_quest("valley_king_tomb", &[]);
+        assert!(result.is_err());
+        // Should succeed when prerequisite is met
+        let result2 = log.start_quest("valley_king_tomb", &["barrow_research".to_string()]);
+        assert!(result2.is_ok());
+    }
+
+    #[test]
+    fn test_crystal_cave_quest_tracks_kills_and_location() {
+        let (_, mut log) = build_narrative();
+        log.start_quest("crystal_cave_clear", &[]).unwrap();
+        // Location objective
+        let msgs = log.on_reach_location("crystal_cave_entrance");
+        assert!(!msgs.is_empty());
+        // Kill objective
+        for _ in 0..3 {
+            log.on_kill("crystal_golem");
+        }
+        let q = log.quests.get("crystal_cave_clear").unwrap();
+        let kill_obj = q.objectives.iter().find(|o| matches!(&o.kind, ObjectiveKind::KillEnemy { enemy_id, .. } if enemy_id == "crystal_golem")).unwrap();
+        if let ObjectiveKind::KillEnemy { current, .. } = &kill_obj.kind {
+            assert_eq!(*current, 3);
+        }
     }
 }

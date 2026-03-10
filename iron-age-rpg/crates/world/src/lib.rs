@@ -429,6 +429,7 @@ pub fn build_starting_world() -> WorldMap {
             RegionType::Swamp,
         )
         .with_exit(Exit::new("west", "bog_trail", "Back along the bog trail."))
+        .with_npc("hermit_bogdan")
         .with_enemy_spawn("bog_crawler")
         .with_enemy_spawn("swamp_witch")
         .with_crafting_station("AlchemyStone"),
@@ -626,6 +627,7 @@ pub fn build_starting_world() -> WorldMap {
             RegionType::Mountains,
         )
         .with_exit(Exit::new("south", "valley_north", "South back down into the valley."))
+        .with_npc("ranger_vex")
         .with_enemy_spawn("stone_troll")
         .with_enemy_spawn("mountain_goat"),
     );
@@ -836,6 +838,7 @@ pub fn build_starting_world() -> WorldMap {
         )
         .with_exit(Exit::new("northwest", "valley_south_meadow", "Northwest back toward the valley meadows."))
         .with_exit(Exit::new("down", "millford_crypt", "Down into the crypt beneath the ruined chapel."))
+        .with_npc("scholar_lyria")
         .with_enemy_spawn("skeleton_warrior")
         .with_enemy_spawn("crypt_ghoul")
         .with_loot_table("millford_ruins"),
@@ -1159,5 +1162,16 @@ mod tests {
         let has_valley_exit = gate.exits.iter()
             .any(|e| e.destination_id == "valley_northwest" || e.destination_id == "valley_northeast");
         assert!(has_valley_exit, "thornvale_gate should connect to the valley");
+    }
+
+    #[test]
+    fn test_npc_placements_in_world() {
+        let world = build_starting_world();
+        let bog = world.locations.get("bog_heart").unwrap();
+        assert!(bog.npc_ids.contains(&"hermit_bogdan".to_string()), "hermit_bogdan should be in bog_heart");
+        let pass = world.locations.get("north_mountain_pass").unwrap();
+        assert!(pass.npc_ids.contains(&"ranger_vex".to_string()), "ranger_vex should be in north_mountain_pass");
+        let millford = world.locations.get("millford_ruins").unwrap();
+        assert!(millford.npc_ids.contains(&"scholar_lyria".to_string()), "scholar_lyria should be in millford_ruins");
     }
 }

@@ -354,9 +354,14 @@ pub fn handle_command(input: &str, state: &mut GameState) -> CommandResult {
         }
 
         "load" => {
-            return CommandResult::Message(
-                "To load a save, restart the game and type 'load' at the main prompt, or run 'cargo run --bin iron-age-rpg -- --load'.".to_string()
-            );
+            match load_game(state) {
+                Ok(msg) => msg,
+                Err(e) => e,
+            }
+        }
+
+        "map" => {
+            display::world_map_display(&state.world)
         }
 
         "quit" | "exit" => return CommandResult::Quit,
@@ -565,6 +570,108 @@ fn save_game(state: &GameState) -> String {
         Ok(()) => format!("Game saved to '{}'.", path),
         Err(e) => format!("Failed to save: {}", e),
     }
+}
+
+pub fn try_load_game(state: &mut GameState) -> Result<String, String> {
+    load_game(state)
+}
+
+fn load_game(state: &mut GameState) -> Result<String, String> {
+    use std::fs;
+
+    let path = "savegame.json";
+    let json = fs::read_to_string(path)
+        .map_err(|e| format!("No save file found ('{}'): {}", path, e))?;
+    let save: serde_json::Value = serde_json::from_str(&json)
+        .map_err(|e| format!("Save file corrupt: {}", e))?;
+
+    // Restore player stats
+    let p = &save["player"];
+    let c = &mut state.player.character;
+    c.name = p["name"].as_str().unwrap_or("Hero").to_string();
+    c.level = p["level"].as_u64().unwrap_or(1) as u32;
+    c.experience = p["experience"].as_u64().unwrap_or(0);
+    c.hp = p["hp"].as_i64().unwrap_or(c.max_hp as i64) as i32;
+    c.max_hp = p["max_hp"].as_i64().unwrap_or(c.max_hp as i64) as i32;
+    c.stamina = p["stamina"].as_i64().unwrap_or(c.max_stamina as i64) as i32;
+    c.max_stamina = p["max_stamina"].as_i64().unwrap_or(c.max_stamina as i64) as i32;
+    c.mana = p["mana"].as_i64().unwrap_or(c.max_mana as i64) as i32;
+    c.max_mana = p["max_mana"].as_i64().unwrap_or(c.max_mana as i64) as i32;
+    c.stat_points = p["stat_points"].as_u64().unwrap_or(0) as u32;
+    c.skill_points = p["skill_points"].as_u64().unwrap_or(0) as u32;
+    if let Some(stats) = p["stats"].as_object() {
+        c.stats.strength = stats.get("strength").and_then(|v| v.as_i64()).unwrap_or(5) as i32;
+        c.stats.intelligence = stats.get("intelligence").and_then(|v| v.as_i64()).unwrap_or(5) as i32;
+        c.stats.wisdom = stats.get("wisdom").and_then(|v| v.as_i64()).unwrap_or(5) as i32;
+        c.stats.constitution = stats.get("constitution").and_then(|v| v.as_i64()).unwrap_or(5) as i32;
+        c.stats.dexterity = stats.get("dexterity").and_then(|v| v.as_i64()).unwrap_or(5) as i32;
+        c.stats.charisma = stats.get("charisma").and_then(|v| v.as_i64()).unwrap_or(5) as i32;
+    }
+
+    // Restore gold and turn
+    state.gold = save["gold"].as_u64().unwrap_or(10) as u32;
+    state.turn = save["turn"].as_u64().unwrap_or(0) as u32;
+
+    // Restore current location
+    if let Some(loc_id) = save["current_location"].as_str() {
+        if state.world.locations.contains_key(loc_id) {
+            state.world.player_location_id = loc_id.to_string();
+            if let Some(loc) = state.world.locations.get_mut(loc_id) {
+                loc.is_visited = true;
+            }
+        }
+    }
+
+    // Restore inventory
+    state.inventory.items.clear();
+    if let Some(items) = save["inventory"].as_array() {
+        for entry in items {
+            if let Some(id) = entry["id"].as_str() {
+                let qty = entry["quantity"].as_u64().unwrap_or(1) as u32;
+                state.give_item(id, qty);
+            }
+        }
+    }
+
+    // Restore equipped items
+    state.equipment = iron_age_inventory::Equipment::default();
+    let eq_keys: &[&str] = &[
+        "main_hand", "off_hand", "helmet", "shoulders",
+        "torso", "leggings", "cape", "amulet", "ring1", "ring2",
+    ];
+    if let Some(equipped) = save["equipped"].as_object() {
+        for key in eq_keys {
+            if let Some(item_id) = equipped.get(*key).and_then(|v| v.as_str()) {
+                if let Some(item) = iron_age_data::find_item(item_id) {
+                    let _ = state.equipment.equip(item);
+                }
+            }
+        }
+    }
+
+    // Restore quest state
+    // Start active quests
+    if let Some(active) = save["active_quests"].as_array() {
+        let completed: Vec<String> = save["completed_quests"].as_array()
+            .map(|arr| arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect())
+            .unwrap_or_default();
+        for q_val in active {
+            if let Some(qid) = q_val.as_str() {
+                let _ = state.quest_log.start_quest(qid, &completed);
+            }
+        }
+    }
+    // Mark completed quests
+    if let Some(completed) = save["completed_quests"].as_array() {
+        for q_val in completed {
+            if let Some(qid) = q_val.as_str() {
+                let _ = state.quest_log.start_quest(qid, &[]);
+                let _ = state.quest_log.try_complete_quest(qid);
+            }
+        }
+    }
+
+    Ok(format!("Game loaded from '{}'. Welcome back, {}!", path, state.player.character.name))
 }
 
 fn run_combat_with(state: &mut GameState, enemy: iron_age_combat::Combatant, enemy_template_id: &str, rng: &mut impl rand::Rng) -> String {
