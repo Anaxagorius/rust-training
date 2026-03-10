@@ -1040,7 +1040,7 @@ fn maybe_encounter(state: &mut GameState, difficulty: u32) -> Vec<String> {
 
 // ── Dice minigame ─────────────────────────────────────────────────────────────
 
-/// `dice <bet>` — play a game of dice in a populated area (Village or Coast dock).
+/// `dice <bet>` — play a game of dice in a populated area (Village).
 ///
 /// Rules: player and opponent each roll 2d6. Highest total wins the pot.
 /// Ties are a push (no gold changes hands). Winning advances the
@@ -1048,18 +1048,18 @@ fn maybe_encounter(state: &mut GameState, difficulty: u32) -> Vec<String> {
 fn play_dice(state: &mut GameState, arg: &str) -> String {
     use iron_age_world::RegionType;
 
-    // Must be in a populated area to gamble
+    // Must be in a Village to gamble (populated settlement areas only)
     let in_populated_area = state.world.current_location()
-        .map(|l| matches!(l.region_type, RegionType::Village | RegionType::Road))
+        .map(|l| matches!(l.region_type, RegionType::Village))
         .unwrap_or(false);
 
-    // Also allow the merchant's crossing docks (Coast adjacent to a Village)
+    // Also allow the merchant's crossing docks (adjacent to the village settlement)
     let loc_id = state.world.current_location().map(|l| l.id.clone()).unwrap_or_default();
     let in_docks = loc_id == "merchants_crossing_docks";
 
     if !in_populated_area && !in_docks {
         return "You need to be in a populated area to play dice. \
-                Try visiting a village, inn, or Merchant's Crossing."
+                Try visiting a village or Merchant's Crossing."
             .to_string();
     }
 
@@ -1080,11 +1080,15 @@ fn play_dice(state: &mut GameState, arg: &str) -> String {
         );
     }
 
-    // Roll dice
+    // Roll dice. Combine nanoseconds with turn counter (multiplied by a prime)
+    // to ensure the seed varies between calls even within the same second.
+    let seed_prime_offset: u64 = 13; // prime multiplier for per-turn variation
     let mut rng = rand::rngs::StdRng::seed_from_u64(
         std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
-            .map_or(state.turn as u64, |d| d.subsec_nanos() as u64 + state.turn as u64 * 3 + 7)
+            .map_or(state.turn as u64, |d| {
+                d.subsec_nanos() as u64 + state.turn as u64 * seed_prime_offset
+            })
     );
 
     let player_d1: u32 = rng.gen_range(1..=6);
@@ -1111,11 +1115,8 @@ fn play_dice(state: &mut GameState, arg: &str) -> String {
             "🏆 You win! +{} gold (total: {})\n",
             bet, state.gold
         ));
-        // Advance dice_champion quest (uses SurviveRounds as a win counter)
-        let quest_msgs = state.quest_log.on_kill("__dice_win__");
-        // SurviveRounds doesn't auto-track wins, so manually advance if quest active
+        // Advance the dice_champion quest win counter
         let dice_msgs = advance_dice_quest(state);
-        for m in quest_msgs { out.push_str(&format!("  {}\n", m)); }
         for m in dice_msgs { out.push_str(&format!("  {}\n", m)); }
     } else if opponent_total > player_total {
         // Opponent wins

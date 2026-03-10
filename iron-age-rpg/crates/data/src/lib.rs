@@ -1114,7 +1114,7 @@ pub fn all_items() -> Vec<Item> {
         Item::new_armor("bone_cuirass", "Bone Cuirass", EquipSlot::Torso, MaterialTier::Stone, ItemRarity::Uncommon, 7),
         Item::new_armor("frost_helm", "Frost Helm", EquipSlot::Helmet, MaterialTier::Iron, ItemRarity::Rare, 6),
         Item::new_armor("serpent_scale_armor", "Serpent Scale Armour", EquipSlot::Torso, MaterialTier::Iron, ItemRarity::Uncommon, 8),
-        Item::new_weapon("iron_long_bow", "Iron-Tipped Longbow", ItemType::Shortbow, MaterialTier::Iron, ItemRarity::Uncommon, 13),
+        Item::new_weapon("iron_long_bow", "Iron Hunting Bow", ItemType::Shortbow, MaterialTier::Iron, ItemRarity::Uncommon, 13),
         Item::new_weapon("black_iron_sword", "Black Iron Sword", ItemType::LongSword, MaterialTier::Iron, ItemRarity::Rare, 20),
         Item {
             id: "frostpeak_amulet".to_string(),

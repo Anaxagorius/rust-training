@@ -244,7 +244,7 @@ impl CraftingSystem {
                 required_skill_level: 2, required_int: 0, base_craft_time_seconds: 35,
                 description: "Tough armour stitched from wolf pelts.".into() },
             // ── New Zone Recipes ────────────────────────────────────────────
-            Recipe { id: "iron_long_bow".into(), name: "Iron-Tipped Longbow".into(),
+            Recipe { id: "iron_long_bow".into(), name: "Iron Hunting Bow".into(),
                 profession: CraftingProfession::BoyerFletcher, station: CraftingStation::FletchingBench,
                 ingredients: vec![RecipeIngredient { item_id: "wood".into(), quantity: 3 },
                                   RecipeIngredient { item_id: "iron_ingot".into(), quantity: 2 },
