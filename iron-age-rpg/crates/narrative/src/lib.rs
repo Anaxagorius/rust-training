@@ -571,6 +571,132 @@ pub fn build_narrative() -> (NpcRegistry, QuestLog) {
         .with_quest("valley_king_tomb"),
     );
 
+    // ── New Zone NPCs ─────────────────────────────────────────────────────────
+
+    npcs.register(
+        Npc::new(
+            "fisherman_aldric", "Fisherman Aldric", NpcRole::QuestGiver,
+            "Ay, the sea's not been right lately. Wraiths in the mist, serpents in the shallows. \
+             You look like someone who can handle themselves.",
+        )
+        .with_dialogue(DialogueLine::new(
+            "fisherman_aldric",
+            "Those coastal raiders have blockaded our fishing grounds. They must be driven off — \
+             follow the shore and find their camp in the old sea-fort."
+        ))
+        .with_dialogue(DialogueLine::new(
+            "fisherman_aldric",
+            "The tide wraiths... they appear when the old temple stirs. Something down there \
+             is waking up. The sunken temple beneath the cliff has been sealed for good reason.",
+        ).when_quest("tide_wraith_hunt", QuestStatus::Active))
+        .with_shop_item("sea_salt")
+        .with_shop_item("driftwood")
+        .with_shop_item("antidote")
+        .with_quest("coastal_raiders_clear")
+        .with_quest("tide_wraith_hunt"),
+    );
+
+    npcs.register(
+        Npc::new(
+            "mining_overseer", "Overseer Maren", NpcRole::QuestGiver,
+            "The quarry was ours before those brigands took it. We need someone \
+             brave enough to take it back.",
+        )
+        .with_dialogue(DialogueLine::new(
+            "mining_overseer",
+            "Clear the quarry bandits from the entrance first, then deal with whatever \
+             is deeper down. Iron is desperately needed in Thornvale."
+        ))
+        .with_dialogue(DialogueLine::new(
+            "mining_overseer",
+            "Mine crawlers are the worst — they burrow through the tunnels and collapse \
+             the shoring timbers. Kill as many as you can.",
+        ).when_quest("quarry_mine_crawlers", QuestStatus::Active))
+        .with_shop_item("iron_ore")
+        .with_shop_item("iron_ingot")
+        .with_shop_item("black_iron_ingot")
+        .with_quest("quarry_bandit_rout")
+        .with_quest("quarry_mine_crawlers"),
+    );
+
+    npcs.register(
+        Npc::new(
+            "frost_sage", "Frost Sage Erindel", NpcRole::QuestGiver,
+            "Few make it to the summit. Fewer still survive what dwells here. \
+             You must be exceptional — or foolhardy.",
+        )
+        .with_dialogue(DialogueLine::new(
+            "frost_sage",
+            "The glacial wraith has haunted this peak for a century, \
+             feeding on the life-force of climbers. If you can banish it, \
+             the summit will be safe again."
+        ))
+        .with_dialogue(DialogueLine::new(
+            "frost_sage",
+            "Ice trolls have multiplied this season. Drive them from the approach \
+             so that the passage to the summit is safe.",
+        ).when_quest("ice_troll_cull", QuestStatus::Active))
+        .with_shop_item("frost_crystal")
+        .with_shop_item("glacier_shard")
+        .with_shop_item("clarity_potion")
+        .with_quest("glacial_wraith_banish")
+        .with_quest("ice_troll_cull"),
+    );
+
+    npcs.register(
+        Npc::new(
+            "merchant_aldis", "Merchant Aldis", NpcRole::Merchant,
+            "Welcome to Merchant's Crossing! Best prices on the river, I guarantee it.",
+        )
+        .with_dialogue(DialogueLine::new(
+            "merchant_aldis",
+            "We see all sorts passing through. Travellers, traders, adventurers. \
+             You want supplies? We have them. Want to make some coin? Try the dice table \
+             — Brom runs an honest game. Mostly."
+        ))
+        .with_shop_item("health_potion")
+        .with_shop_item("stamina_potion")
+        .with_shop_item("antidote")
+        .with_shop_item("iron_ingot")
+        .with_shop_item("leather")
+        .with_shop_item("herbs")
+        .with_shop_item("clean_water")
+        .with_shop_item("driftwood")
+        .with_shop_item("sea_salt"),
+    );
+
+    npcs.register(
+        Npc::new(
+            "dice_master_brom", "Dice Master Brom", NpcRole::Civilian,
+            "Want to play a hand of dice? Put up some gold and we'll see \
+             who Lady Luck favours today!",
+        )
+        .with_dialogue(DialogueLine::new(
+            "dice_master_brom",
+            "The rules are simple: we each roll two dice and add them up. \
+             Highest total wins the pot. Type 'dice <bet>' to play."
+        ))
+        .with_quest("dice_champion"),
+    );
+
+    npcs.register(
+        Npc::new(
+            "barge_master_finn", "Barge Master Finn", NpcRole::QuestGiver,
+            "Those river serpents are bad for business. I've lost two good deckhands \
+             this season already.",
+        )
+        .with_dialogue(DialogueLine::new(
+            "barge_master_finn",
+            "Kill enough river serpents and harpies around the docks and I'll \
+             make it worth your while. Salvage trade needs those waters clear."
+        ))
+        .with_shop_item("driftwood")
+        .with_shop_item("sea_salt")
+        .with_shop_item("serpent_scale")
+        .with_shop_item("harpy_feather")
+        .with_quest("river_dock_clear"),
+    );
+
     // ── Quests ────────────────────────────────────────────────────────────────
 
     // Quest 1: Drive back the goblins (main quest)
@@ -808,6 +934,479 @@ pub fn build_narrative() -> (NpcRegistry, QuestLog) {
         )
         .with_prerequisite("barrow_research"),
     );
+
+    // ── Zone 1: Ember Coast Quests (4) ───────────────────────────────────────
+
+    // Quest: Clear coastal raiders
+    quest_log.register(Quest::new(
+        "coastal_raiders_clear",
+        "Drive Off the Raiders",
+        "Fisherman Aldric has asked you to clear the coastal raiders from the Ember \
+         Coast shore and ruins. They have blockaded the fishing grounds and must be \
+         driven back into the sea.",
+        "fisherman_aldric",
+        vec![
+            QuestObjective {
+                description: "Reach the Ember Coast shore".to_string(),
+                kind: ObjectiveKind::ReachLocation {
+                    location_id: "ember_coast_shore".to_string(), reached: false,
+                },
+            },
+            QuestObjective {
+                description: "Defeat coastal raiders (4)".to_string(),
+                kind: ObjectiveKind::KillEnemy {
+                    enemy_id: "coastal_raider".to_string(), required: 4, current: 0,
+                },
+            },
+            QuestObjective {
+                description: "Reach the sea-fort ruins".to_string(),
+                kind: ObjectiveKind::ReachLocation {
+                    location_id: "ember_coast_ruins".to_string(), reached: false,
+                },
+            },
+        ],
+        QuestReward::new(320, 40).with_item("iron_short_sword"),
+    ));
+
+    // Quest: Hunt tide wraiths
+    quest_log.register(Quest::new(
+        "tide_wraith_hunt",
+        "Banish the Tide Wraiths",
+        "Fisherman Aldric warns that tide wraiths have appeared in the sea mist, \
+         luring sailors to their doom. Venture to the Ember Coast and drive them off.",
+        "fisherman_aldric",
+        vec![
+            QuestObjective {
+                description: "Defeat tide wraiths (3)".to_string(),
+                kind: ObjectiveKind::KillEnemy {
+                    enemy_id: "tide_wraith".to_string(), required: 3, current: 0,
+                },
+            },
+        ],
+        QuestReward::new(280, 35).with_item("antidote"),
+    ));
+
+    // Quest: Sea serpent hunt
+    quest_log.register(Quest::new(
+        "sea_serpent_hunt",
+        "Scales of the Deep",
+        "The sea serpents of the Ember Coast are attacking fishing boats. \
+         Hunt them and collect their scales — a prize of considerable value.",
+        "fisherman_aldric",
+        vec![
+            QuestObjective {
+                description: "Defeat sea serpents (3)".to_string(),
+                kind: ObjectiveKind::KillEnemy {
+                    enemy_id: "sea_serpent".to_string(), required: 3, current: 0,
+                },
+            },
+            QuestObjective {
+                description: "Collect serpent scales (3)".to_string(),
+                kind: ObjectiveKind::CollectItem {
+                    item_id: "serpent_scale".to_string(), required: 3, current: 0,
+                },
+            },
+        ],
+        QuestReward::new(350, 45).with_item("serpent_scale_armor"),
+    ));
+
+    // Quest: Sunken temple delve
+    quest_log.register(Quest::new(
+        "sunken_temple_delve",
+        "Depths of the Sunken Temple",
+        "The Sunken Temple beneath the Ember Coast cliff is stirring. \
+         Venture inside, defeat the cursed acolytes and guardians, and \
+         claim the Temple Seal Amulet from the sanctum altar.",
+        "fisherman_aldric",
+        vec![
+            QuestObjective {
+                description: "Reach the Sunken Temple entrance".to_string(),
+                kind: ObjectiveKind::ReachLocation {
+                    location_id: "sunken_temple_entrance".to_string(), reached: false,
+                },
+            },
+            QuestObjective {
+                description: "Defeat cursed acolytes (3)".to_string(),
+                kind: ObjectiveKind::KillEnemy {
+                    enemy_id: "cursed_acolyte".to_string(), required: 3, current: 0,
+                },
+            },
+            QuestObjective {
+                description: "Reach the Sunken Temple sanctum".to_string(),
+                kind: ObjectiveKind::ReachLocation {
+                    location_id: "sunken_temple_sanctum".to_string(), reached: false,
+                },
+            },
+            QuestObjective {
+                description: "Defeat the Bone Colossus".to_string(),
+                kind: ObjectiveKind::KillEnemy {
+                    enemy_id: "bone_colossus".to_string(), required: 1, current: 0,
+                },
+            },
+            QuestObjective {
+                description: "Collect the Temple Seal Amulet".to_string(),
+                kind: ObjectiveKind::CollectItem {
+                    item_id: "temple_seal_amulet".to_string(), required: 1, current: 0,
+                },
+            },
+        ],
+        QuestReward::new(900, 120).with_item("black_iron_sword"),
+    ));
+
+    // ── Zone 2: Iron Quarry Quests (4) ────────────────────────────────────────
+
+    // Quest: Quarry bandit rout
+    quest_log.register(Quest::new(
+        "quarry_bandit_rout",
+        "Reclaim the Quarry",
+        "Overseer Maren needs the Iron Quarry cleared of brigands so that \
+         legitimate mining can resume. Drive off the quarry bandits.",
+        "mining_overseer",
+        vec![
+            QuestObjective {
+                description: "Reach the Iron Quarry entrance".to_string(),
+                kind: ObjectiveKind::ReachLocation {
+                    location_id: "iron_quarry_entrance".to_string(), reached: false,
+                },
+            },
+            QuestObjective {
+                description: "Defeat quarry bandits (4)".to_string(),
+                kind: ObjectiveKind::KillEnemy {
+                    enemy_id: "quarry_bandit".to_string(), required: 4, current: 0,
+                },
+            },
+        ],
+        QuestReward::new(280, 30).with_item("iron_ingot"),
+    ));
+
+    // Quest: Mine crawler extermination
+    quest_log.register(Quest::new(
+        "quarry_mine_crawlers",
+        "Infestation",
+        "Mine crawlers have infested the lower quarry tunnels, collapsing shoring \
+         timbers and making the depths impassable. Overseer Maren asks you to \
+         exterminate them.",
+        "mining_overseer",
+        vec![
+            QuestObjective {
+                description: "Defeat mine crawlers (5)".to_string(),
+                kind: ObjectiveKind::KillEnemy {
+                    enemy_id: "mine_crawler".to_string(), required: 5, current: 0,
+                },
+            },
+            QuestObjective {
+                description: "Reach the quarry depths".to_string(),
+                kind: ObjectiveKind::ReachLocation {
+                    location_id: "iron_quarry_depths".to_string(), reached: false,
+                },
+            },
+        ],
+        QuestReward::new(300, 35).with_item("iron_chainmail"),
+    ));
+
+    // Quest: Collect black iron
+    quest_log.register(Quest::new(
+        "black_iron_harvest",
+        "The Black Seam",
+        "Overseer Maren has heard rumours of a rich black iron seam deep in the quarry. \
+         Descend to the depths and collect black iron ingots from the deepest tunnels.",
+        "mining_overseer",
+        vec![
+            QuestObjective {
+                description: "Collect black iron ingots (3)".to_string(),
+                kind: ObjectiveKind::CollectItem {
+                    item_id: "black_iron_ingot".to_string(), required: 3, current: 0,
+                },
+            },
+        ],
+        QuestReward::new(250, 40).with_item("iron_round_shield"),
+    ));
+
+    // Quest: Defeat the iron golem
+    quest_log.register(Quest::new(
+        "iron_golem_destroy",
+        "The Iron Sentinel",
+        "An iron golem in the quarry depths has gone rogue, attacking both the \
+         bandits and the mine crawlers indiscriminately. Overseer Maren asks \
+         you to destroy it before it collapses the entire quarry.",
+        "mining_overseer",
+        vec![
+            QuestObjective {
+                description: "Defeat the iron golem".to_string(),
+                kind: ObjectiveKind::KillEnemy {
+                    enemy_id: "iron_golem".to_string(), required: 1, current: 0,
+                },
+            },
+            QuestObjective {
+                description: "Reach the quarry depths".to_string(),
+                kind: ObjectiveKind::ReachLocation {
+                    location_id: "iron_quarry_depths".to_string(), reached: false,
+                },
+            },
+        ],
+        QuestReward::new(400, 55).with_item("black_iron_sword"),
+    ));
+
+    // ── Zone 3: Sunken Temple Quests (4) ─────────────────────────────────────
+    // (Sunken temple quests already handled in Zone 1 coastal quests above,
+    // so here we add temple-specific quests from the scholar)
+
+    // Quest: Temple serpent purge
+    quest_log.register(Quest::new(
+        "temple_serpent_purge",
+        "Serpents of the Deep",
+        "The sunken temple is overrun with temple serpents. Scholar Lyria believes \
+         they guard something important in the inner sanctum. Clear them out.",
+        "scholar_lyria",
+        vec![
+            QuestObjective {
+                description: "Defeat temple serpents (4)".to_string(),
+                kind: ObjectiveKind::KillEnemy {
+                    enemy_id: "temple_serpent".to_string(), required: 4, current: 0,
+                },
+            },
+        ],
+        QuestReward::new(260, 30).with_item("antidote"),
+    ));
+
+    // Quest: Guardian spirits
+    quest_log.register(Quest::new(
+        "temple_guardian_rites",
+        "Ward of the Ancients",
+        "Scholar Lyria has identified temple guardian spirits bound to the \
+         sunken temple by ancient rites. Defeat them to weaken the temple's \
+         supernatural defences.",
+        "scholar_lyria",
+        vec![
+            QuestObjective {
+                description: "Defeat temple guardian spirits (2)".to_string(),
+                kind: ObjectiveKind::KillEnemy {
+                    enemy_id: "temple_guardian_spirit".to_string(), required: 2, current: 0,
+                },
+            },
+            QuestObjective {
+                description: "Reach the temple sanctum".to_string(),
+                kind: ObjectiveKind::ReachLocation {
+                    location_id: "sunken_temple_sanctum".to_string(), reached: false,
+                },
+            },
+        ],
+        QuestReward::new(380, 50).with_item("temple_seal_amulet"),
+    ));
+
+    // Quest: Idol construct smash
+    quest_log.register(Quest::new(
+        "idol_construct_smash",
+        "Shatter the Idols",
+        "Idol constructs animated by the temple's residual power block access \
+         to the inner sanctum. Destroy them to open the way.",
+        "scholar_lyria",
+        vec![
+            QuestObjective {
+                description: "Defeat idol constructs (2)".to_string(),
+                kind: ObjectiveKind::KillEnemy {
+                    enemy_id: "idol_construct".to_string(), required: 2, current: 0,
+                },
+            },
+        ],
+        QuestReward::new(320, 40).with_item("ancient_amulet"),
+    ));
+
+    // Quest: Collect temple relics
+    quest_log.register(Quest::new(
+        "temple_relic_recovery",
+        "Relics of the Deep Faith",
+        "Scholar Lyria wants to catalogue the temple relics for academic study. \
+         Collect relics from the sunken temple and return them to her.",
+        "scholar_lyria",
+        vec![
+            QuestObjective {
+                description: "Collect temple relics (4)".to_string(),
+                kind: ObjectiveKind::CollectItem {
+                    item_id: "temple_relic".to_string(), required: 4, current: 0,
+                },
+            },
+            QuestObjective {
+                description: "Return to Scholar Lyria".to_string(),
+                kind: ObjectiveKind::TalkToNpc {
+                    npc_id: "scholar_lyria".to_string(), talked: false,
+                },
+            },
+        ],
+        QuestReward::new(280, 35).with_item("clarity_potion"),
+    ));
+
+    // ── Zone 4: Frostpeak Quests (4) ─────────────────────────────────────────
+
+    // Quest: Banish the glacial wraith
+    quest_log.register(Quest::new(
+        "glacial_wraith_banish",
+        "The Eternal Cold",
+        "Frost Sage Erindel has asked you to banish the glacial wraith that \
+         haunts the Frostpeak summit. It has fed on climbers for a century \
+         and must be put to rest.",
+        "frost_sage",
+        vec![
+            QuestObjective {
+                description: "Reach the Frostpeak summit".to_string(),
+                kind: ObjectiveKind::ReachLocation {
+                    location_id: "frostpeak_summit".to_string(), reached: false,
+                },
+            },
+            QuestObjective {
+                description: "Defeat the glacial wraith".to_string(),
+                kind: ObjectiveKind::KillEnemy {
+                    enemy_id: "glacial_wraith".to_string(), required: 1, current: 0,
+                },
+            },
+        ],
+        QuestReward::new(420, 55).with_item("frostpeak_amulet"),
+    ));
+
+    // Quest: Ice troll cull
+    quest_log.register(Quest::new(
+        "ice_troll_cull",
+        "Thinning the Pack",
+        "Ice trolls have multiplied on the Frostpeak approach, making the path \
+         to the summit impassable. Frost Sage Erindel asks you to cull their numbers.",
+        "frost_sage",
+        vec![
+            QuestObjective {
+                description: "Defeat ice trolls (3)".to_string(),
+                kind: ObjectiveKind::KillEnemy {
+                    enemy_id: "ice_troll".to_string(), required: 3, current: 0,
+                },
+            },
+        ],
+        QuestReward::new(360, 45).with_item("frost_helm"),
+    ));
+
+    // Quest: Frost wolf pelts
+    quest_log.register(Quest::new(
+        "frost_wolf_pelts",
+        "Winter's Fur",
+        "Frost Sage Erindel needs frost wolf pelts to keep warm through the mountain \
+         winter. Hunt the frost wolves on the approach.",
+        "frost_sage",
+        vec![
+            QuestObjective {
+                description: "Kill frost wolves (3)".to_string(),
+                kind: ObjectiveKind::KillEnemy {
+                    enemy_id: "frost_wolf".to_string(), required: 3, current: 0,
+                },
+            },
+            QuestObjective {
+                description: "Collect wolf pelts (3)".to_string(),
+                kind: ObjectiveKind::CollectItem {
+                    item_id: "wolf_pelt".to_string(), required: 3, current: 0,
+                },
+            },
+        ],
+        QuestReward::new(240, 30).with_item("stamina_potion"),
+    ));
+
+    // Quest: Frostpeak summit reach
+    quest_log.register(Quest::new(
+        "frostpeak_summit_reach",
+        "Peak of the World",
+        "Frost Sage Erindel challenges you to reach the summit of Frostpeak and \
+         return alive — a test of true mettle that few have passed.",
+        "frost_sage",
+        vec![
+            QuestObjective {
+                description: "Reach the Frostpeak approach".to_string(),
+                kind: ObjectiveKind::ReachLocation {
+                    location_id: "frostpeak_approach".to_string(), reached: false,
+                },
+            },
+            QuestObjective {
+                description: "Reach the Frostpeak summit".to_string(),
+                kind: ObjectiveKind::ReachLocation {
+                    location_id: "frostpeak_summit".to_string(), reached: false,
+                },
+            },
+        ],
+        QuestReward::new(200, 20).with_item("glacier_shard"),
+    ));
+
+    // ── Zone 5: Merchant's Crossing Quests (4) ────────────────────────────────
+
+    // Quest: Dice champion
+    quest_log.register(Quest::new(
+        "dice_champion",
+        "Lucky Bones",
+        "Dice Master Brom has challenged you to prove yourself at the dice table. \
+         Win three games of dice in the populated areas of the valley.",
+        "dice_master_brom",
+        vec![
+            QuestObjective {
+                description: "Win dice games (3)".to_string(),
+                kind: ObjectiveKind::SurviveRounds { rounds: 3, survived: 0 },
+            },
+        ],
+        QuestReward::new(100, 25),
+    ));
+
+    // Quest: River dock clear
+    quest_log.register(Quest::new(
+        "river_dock_clear",
+        "Clear the Docks",
+        "Barge Master Finn needs the river docks cleared of river serpents and \
+         harpies so that trading barges can operate safely again.",
+        "barge_master_finn",
+        vec![
+            QuestObjective {
+                description: "Defeat river serpents (3)".to_string(),
+                kind: ObjectiveKind::KillEnemy {
+                    enemy_id: "river_serpent".to_string(), required: 3, current: 0,
+                },
+            },
+            QuestObjective {
+                description: "Defeat harpies (2)".to_string(),
+                kind: ObjectiveKind::KillEnemy {
+                    enemy_id: "harpy".to_string(), required: 2, current: 0,
+                },
+            },
+        ],
+        QuestReward::new(220, 30).with_item("iron_short_sword"),
+    ));
+
+    // Quest: Collect harpy feathers
+    quest_log.register(Quest::new(
+        "harpy_feather_collect",
+        "Fine Fletching",
+        "Barge Master Finn trades in rare goods — harpy feathers fetch a good price \
+         from fletchers. Collect them from the dock harpies.",
+        "barge_master_finn",
+        vec![
+            QuestObjective {
+                description: "Collect harpy feathers (5)".to_string(),
+                kind: ObjectiveKind::CollectItem {
+                    item_id: "harpy_feather".to_string(), required: 5, current: 0,
+                },
+            },
+        ],
+        QuestReward::new(150, 20).with_item("shortbow"),
+    ));
+
+    // Quest: Reach Merchant's Crossing
+    quest_log.register(Quest::new(
+        "reach_merchants_crossing",
+        "Follow the River",
+        "Merchant Aldis at Merchant's Crossing has goods to sell, but the road \
+         there is long and not entirely safe. Simply reach the crossing to \
+         unlock his wares.",
+        "merchant_aldis",
+        vec![
+            QuestObjective {
+                description: "Reach Merchant's Crossing".to_string(),
+                kind: ObjectiveKind::ReachLocation {
+                    location_id: "merchants_crossing".to_string(), reached: false,
+                },
+            },
+        ],
+        QuestReward::new(80, 10),
+    ));
 
     (npcs, quest_log)
 }

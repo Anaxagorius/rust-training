@@ -1780,9 +1780,13 @@ mod tests {
     #[test]
     fn test_boss_has_highest_level() {
         let templates = all_enemy_templates();
-        let warlord = find_template("goblin_warlord").unwrap();
+        // bone_colossus (level 8) is the apex boss of the Sunken Temple
+        let colossus = find_template("bone_colossus").unwrap();
         let max_level = templates.iter().map(|t| t.level).max().unwrap();
-        assert_eq!(warlord.level, max_level);
+        assert_eq!(colossus.level, max_level);
+        // goblin warlord remains the main story boss at level 7
+        let warlord = find_template("goblin_warlord").unwrap();
+        assert_eq!(warlord.level, 7);
     }
 
     #[test]
