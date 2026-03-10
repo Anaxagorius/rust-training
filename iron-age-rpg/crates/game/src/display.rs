@@ -252,6 +252,7 @@ pub fn help_text() -> &'static str {
   learn <recipe_id>        — Learn a new crafting recipe
   accept <quest_id>        — Accept a quest from an NPC
   complete <quest_id>      — Turn in a completed quest
+  dice <bet>               — Play a dice game (in populated areas; bet gold to win more)
   save                     — Save your progress to savegame.json
   load                     — Load a previously saved game
   help                     — Show this help
