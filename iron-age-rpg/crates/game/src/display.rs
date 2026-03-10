@@ -1,4 +1,4 @@
-use iron_age_world::Location;
+use iron_age_world::{Location, WorldMap};
 use iron_age_character::Character;
 use iron_age_combat::Combatant;
 use iron_age_narrative::Quest;
@@ -176,12 +176,62 @@ pub fn combat_display(combatants: &[Combatant]) -> String {
     out
 }
 
+/// Display a text overview of explored locations grouped by region.
+pub fn world_map_display(world: &WorldMap) -> String {
+    // Group visited locations by region name for readability.
+    // The player's current location is marked with ▶.
+    let current_id = &world.player_location_id;
+
+    // Collect all locations sorted by id for stable output.
+    let mut entries: Vec<(&String, &Location)> = world.locations.iter().collect();
+    entries.sort_by_key(|(id, _)| id.as_str());
+
+    let visited: Vec<&Location> = entries.iter()
+        .filter_map(|(_, loc)| if loc.is_visited { Some(*loc) } else { None })
+        .collect();
+
+    let total = world.locations.len();
+
+    let mut out = format!(
+        "── World Map ({}/{} locations explored) ──\n",
+        visited.len(), total
+    );
+
+    if visited.is_empty() {
+        out.push_str("  (No locations explored yet)\n");
+        return out;
+    }
+
+    for loc in &visited {
+        let marker = if &loc.id == current_id { "▶ " } else { "  " };
+        // Show exits so the player knows where they can go next.
+        let exit_list: Vec<String> = loc.exits.iter().map(|e| {
+            // Is the destination visited?
+            let visited_dest = world.locations.get(&e.destination_id)
+                .map_or(false, |d| d.is_visited);
+            let lock_tag = if e.is_locked { "[🔒]" } else { "" };
+            let seen_tag = if visited_dest { "" } else { "?" };
+            format!("{}{}{}", e.direction, lock_tag, seen_tag)
+        }).collect();
+        let exits_str = if exit_list.is_empty() {
+            String::new()
+        } else {
+            format!(" → {}", exit_list.join(", "))
+        };
+        out.push_str(&format!("{}[{}]{}\n", marker, loc.name, exits_str));
+    }
+
+    out.push_str("\n  ▶ = current location   ? = unexplored exit\n");
+    out
+}
+
 pub fn help_text() -> &'static str {
     "
 ── Commands ──
   look / l                 — Describe your current location
   go <direction>           — Move in a direction (north, south, east, west)
   search / examine / loot  — Search the current location for treasure and items
+  map                      — Show a map of all explored locations
   talk <npc>               — Talk to an NPC
   attack                   — Attack a hostile creature
   flee                     — Attempt to flee from combat
@@ -203,6 +253,7 @@ pub fn help_text() -> &'static str {
   accept <quest_id>        — Accept a quest from an NPC
   complete <quest_id>      — Turn in a completed quest
   save                     — Save your progress to savegame.json
+  load                     — Load a previously saved game
   help                     — Show this help
   quit                     — Quit the game
 "

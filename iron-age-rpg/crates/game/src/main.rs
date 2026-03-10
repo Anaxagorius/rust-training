@@ -7,8 +7,24 @@ use std::io::{self, BufRead, Write};
 fn main() {
     println!("{}", display::title_screen());
 
+    let args: Vec<String> = std::env::args().collect();
+    let load_on_start = args.iter().any(|a| a == "--load");
+
     let mut state = game_state::GameState::new_game();
-    println!("{}", display::intro_text());
+
+    if load_on_start {
+        match commands::try_load_game(&mut state) {
+            Ok(msg) => println!("{}", msg),
+            Err(e)  => {
+                println!("{}", e);
+                println!("Starting a new game instead.");
+                println!("{}", display::intro_text());
+            }
+        }
+    } else {
+        println!("{}", display::intro_text());
+    }
+
     println!("\n{}", display::location_display(state.world.current_location().unwrap()));
 
     let stdin = io::stdin();

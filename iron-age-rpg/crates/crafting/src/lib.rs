@@ -205,6 +205,44 @@ impl CraftingSystem {
                 output_item_id: "pitch_bomb".into(), output_quantity: 1,
                 required_skill_level: 1, required_int: 2, base_craft_time_seconds: 15,
                 description: "A crude fire-starting explosive.".into() },
+            // ── Advanced Alchemy ────────────────────────────────────────────
+            Recipe { id: "clarity_potion".into(), name: "Clarity Potion".into(),
+                profession: CraftingProfession::Alchemy, station: CraftingStation::AlchemyStone,
+                ingredients: vec![RecipeIngredient { item_id: "crystalline_dust".into(), quantity: 1 },
+                                  RecipeIngredient { item_id: "clean_water".into(), quantity: 1 }],
+                output_item_id: "clarity_potion".into(), output_quantity: 1,
+                required_skill_level: 2, required_int: 4, base_craft_time_seconds: 20,
+                description: "Restores mana. Brewed from crystalline cave dust.".into() },
+            Recipe { id: "fortify_potion".into(), name: "Fortify Potion".into(),
+                profession: CraftingProfession::Alchemy, station: CraftingStation::AlchemyStone,
+                ingredients: vec![RecipeIngredient { item_id: "herbs".into(), quantity: 2 },
+                                  RecipeIngredient { item_id: "bog_moss".into(), quantity: 1 },
+                                  RecipeIngredient { item_id: "clean_water".into(), quantity: 1 }],
+                output_item_id: "fortify_potion".into(), output_quantity: 1,
+                required_skill_level: 2, required_int: 3, base_craft_time_seconds: 25,
+                description: "Grants Regen for 5 turns.".into() },
+            Recipe { id: "stamina_potion".into(), name: "Stamina Potion".into(),
+                profession: CraftingProfession::Alchemy, station: CraftingStation::AlchemyStone,
+                ingredients: vec![RecipeIngredient { item_id: "meat".into(), quantity: 1 },
+                                  RecipeIngredient { item_id: "herbs".into(), quantity: 1 }],
+                output_item_id: "stamina_potion".into(), output_quantity: 1,
+                required_skill_level: 1, required_int: 2, base_craft_time_seconds: 15,
+                description: "Restores stamina.".into() },
+            // ── Advanced Smithing ───────────────────────────────────────────
+            Recipe { id: "iron_long_sword".into(), name: "Iron Long Sword".into(),
+                profession: CraftingProfession::Weaponsmithing, station: CraftingStation::Forge,
+                ingredients: vec![RecipeIngredient { item_id: "iron_ingot".into(), quantity: 5 },
+                                  RecipeIngredient { item_id: "leather_wrap".into(), quantity: 2 }],
+                output_item_id: "iron_long_sword".into(), output_quantity: 1,
+                required_skill_level: 2, required_int: 0, base_craft_time_seconds: 45,
+                description: "A longer iron sword with better reach and damage.".into() },
+            Recipe { id: "wolf_pelt_armor".into(), name: "Wolf Pelt Armour".into(),
+                profession: CraftingProfession::Armorsmithing, station: CraftingStation::TanningRack,
+                ingredients: vec![RecipeIngredient { item_id: "wolf_pelt".into(), quantity: 3 },
+                                  RecipeIngredient { item_id: "leather".into(), quantity: 2 }],
+                output_item_id: "wolf_pelt_armor".into(), output_quantity: 1,
+                required_skill_level: 2, required_int: 0, base_craft_time_seconds: 35,
+                description: "Tough armour stitched from wolf pelts.".into() },
         ]
     }
 }
@@ -303,5 +341,32 @@ mod tests {
 
         let result = cs.craft("iron_short_sword", &mut inv, 0, 10, 10, &mut rng);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_advanced_recipes_exist() {
+        let cs = CraftingSystem::with_starter_recipes();
+        let ids: Vec<&str> = cs.all_recipes.iter().map(|r| r.id.as_str()).collect();
+        assert!(ids.contains(&"clarity_potion"), "clarity_potion recipe should exist");
+        assert!(ids.contains(&"fortify_potion"), "fortify_potion recipe should exist");
+        assert!(ids.contains(&"stamina_potion"), "stamina_potion recipe should exist");
+        assert!(ids.contains(&"iron_long_sword"), "iron_long_sword recipe should exist");
+        assert!(ids.contains(&"wolf_pelt_armor"), "wolf_pelt_armor recipe should exist");
+    }
+
+    #[test]
+    fn test_craft_clarity_potion_with_crystalline_dust() {
+        use iron_age_inventory::{Item, ItemType};
+        let mut rng = rand::rngs::StdRng::seed_from_u64(7);
+        let mut cs = CraftingSystem::with_starter_recipes();
+        let mut inv = Inventory::new(40);
+        let mut dust = Item::new_consumable("crystalline_dust", "Crystalline Dust", ItemType::CraftingMaterial, 10);
+        dust.quantity = 1;
+        let water = Item::new_consumable("clean_water", "Clean Water", ItemType::CraftingMaterial, 5);
+        inv.add_item(dust).unwrap();
+        inv.add_item(water).unwrap();
+        // Skill 2, INT 4 required
+        let result = cs.craft("clarity_potion", &mut inv, 2, 4, 4, &mut rng);
+        assert!(result.is_ok());
     }
 }
