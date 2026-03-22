@@ -423,7 +423,16 @@ pub fn build_narrative() -> (NpcRegistry, QuestLog) {
             "Thank the gods you are out there fighting. Keep at it — drive \
              them from the courtyard and find the iron key to reach their warlord."
         ).when_quest("drive_back_goblins", QuestStatus::Active))
-        .with_quest("drive_back_goblins"),
+        .with_quest("drive_back_goblins")
+        .with_quest("clear_wolf_den")
+        .with_quest("valley_explorer")
+        .with_quest("bandit_camp_raid")
+        .with_quest("bog_witch_queen")
+        .with_quest("ironmere_free_captives")
+        .with_quest("ironmere_dungeon_clear")
+        .with_quest("barrow_high_knight")
+        .with_quest("tomb_skeleton_hunt")
+        .with_quest("tomb_mummy_hunt"),
     );
 
     npcs.register(
@@ -454,7 +463,8 @@ pub fn build_narrative() -> (NpcRegistry, QuestLog) {
         .with_shop_item("iron_ingot")
         .with_shop_item("leather")
         .with_shop_item("wood_shaft")
-        .with_quest("gather_iron"),
+        .with_quest("gather_iron")
+        .with_quest("ashwood_lumber_run"),
     );
 
     npcs.register(
@@ -469,7 +479,9 @@ pub fn build_narrative() -> (NpcRegistry, QuestLog) {
         .with_shop_item("iron_ingot")
         .with_shop_item("leather")
         .with_shop_item("herbs")
-        .with_shop_item("clean_water"),
+        .with_shop_item("clean_water")
+        .with_quest("thornvale_market_supply")
+        .with_quest("ironmere_warlord_hoard"),
     );
 
     npcs.register(
@@ -481,7 +493,9 @@ pub fn build_narrative() -> (NpcRegistry, QuestLog) {
         .with_dialogue(DialogueLine::new(
             "innkeeper_marta",
             "The inn is safe. Sleep here to fully restore your health and stamina."
-        )),
+        ))
+        .with_quest("thornvale_herbalist")
+        .with_quest("ashwood_spider_hunt"),
     );
 
     npcs.register(
@@ -494,7 +508,13 @@ pub fn build_narrative() -> (NpcRegistry, QuestLog) {
             "guard_torven",
             "Watch yourself on the King's Road. There are wolf packs and \
              goblin scouts between here and the forest."
-        )),
+        ))
+        .with_quest("ashwood_forest_patrol")
+        .with_quest("valley_explorer")
+        .with_quest("bandit_camp_raid")
+        .with_quest("valley_watchtower_survey")
+        .with_quest("crystal_cave_bat_nest")
+        .with_quest("ironmere_archer_hunt"),
     );
 
     // NPCs outside Thornvale
@@ -520,7 +540,12 @@ pub fn build_narrative() -> (NpcRegistry, QuestLog) {
         .with_shop_item("herbs")
         .with_shop_item("bog_moss")
         .with_shop_item("nightshade_leaf")
-        .with_quest("shadow_cave_delve"),
+        .with_quest("shadow_cave_delve")
+        .with_quest("bog_moss_harvest")
+        .with_quest("bog_pest_control")
+        .with_quest("bog_witch_warning")
+        .with_quest("shadow_hidden_chamber")
+        .with_quest("crystal_dust_harvest"),
     );
 
     npcs.register(
@@ -540,7 +565,12 @@ pub fn build_narrative() -> (NpcRegistry, QuestLog) {
             "Good progress in there. The golems are weakest against blunt weapons — \
              their crystal shells shatter rather than flex.",
         ).when_quest("crystal_cave_clear", QuestStatus::Active))
-        .with_quest("crystal_cave_clear"),
+        .with_quest("crystal_cave_clear")
+        .with_quest("ashwood_ancient_grove_discovery")
+        .with_quest("ashwood_treant_lord")
+        .with_quest("crystal_cave_bear_trophy")
+        .with_quest("crystal_cave_depths_expedition")
+        .with_quest("crystal_elemental_boss"),
     );
 
     npcs.register(
@@ -568,7 +598,18 @@ pub fn build_narrative() -> (NpcRegistry, QuestLog) {
              dare you venture into the Valley King's Tomb? The crown must be there.",
         ).when_quest("valley_king_tomb", QuestStatus::NotStarted))
         .with_quest("barrow_research")
-        .with_quest("valley_king_tomb"),
+        .with_quest("valley_king_tomb")
+        .with_quest("ashwood_ancient_grove_discovery")
+        .with_quest("barrow_wraith_hunt")
+        .with_quest("barrow_coin_collection")
+        .with_quest("barrow_high_knight")
+        .with_quest("tomb_inscription_research")
+        .with_quest("tomb_spectral_cleansing")
+        .with_quest("temple_serpent_purge")
+        .with_quest("temple_guardian_rites")
+        .with_quest("idol_construct_smash")
+        .with_quest("temple_relic_recovery")
+        .with_quest("temple_coin_recovery"),
     );
 
     // ── New Zone NPCs ─────────────────────────────────────────────────────────
@@ -593,7 +634,10 @@ pub fn build_narrative() -> (NpcRegistry, QuestLog) {
         .with_shop_item("driftwood")
         .with_shop_item("antidote")
         .with_quest("coastal_raiders_clear")
-        .with_quest("tide_wraith_hunt"),
+        .with_quest("tide_wraith_hunt")
+        .with_quest("sea_serpent_hunt")
+        .with_quest("sunken_temple_delve")
+        .with_quest("saltstone_crab_hunt"),
     );
 
     npcs.register(
@@ -616,7 +660,10 @@ pub fn build_narrative() -> (NpcRegistry, QuestLog) {
         .with_shop_item("iron_ingot")
         .with_shop_item("black_iron_ingot")
         .with_quest("quarry_bandit_rout")
-        .with_quest("quarry_mine_crawlers"),
+        .with_quest("quarry_mine_crawlers")
+        .with_quest("black_iron_harvest")
+        .with_quest("iron_golem_destroy")
+        .with_quest("quarry_ore_delivery"),
     );
 
     npcs.register(
@@ -640,7 +687,10 @@ pub fn build_narrative() -> (NpcRegistry, QuestLog) {
         .with_shop_item("glacier_shard")
         .with_shop_item("clarity_potion")
         .with_quest("glacial_wraith_banish")
-        .with_quest("ice_troll_cull"),
+        .with_quest("ice_troll_cull")
+        .with_quest("frost_wolf_pelts")
+        .with_quest("frostpeak_summit_reach")
+        .with_quest("frozen_eagle_hunt"),
     );
 
     npcs.register(
@@ -676,7 +726,9 @@ pub fn build_narrative() -> (NpcRegistry, QuestLog) {
             "The rules are simple: we each roll two dice and add them up. \
              Highest total wins the pot. Type 'dice <bet>' to play."
         ))
-        .with_quest("dice_champion"),
+        .with_quest("dice_champion")
+        .with_quest("reach_merchants_crossing")
+        .with_quest("merchant_goods_delivery"),
     );
 
     npcs.register(
@@ -694,7 +746,8 @@ pub fn build_narrative() -> (NpcRegistry, QuestLog) {
         .with_shop_item("sea_salt")
         .with_shop_item("serpent_scale")
         .with_shop_item("harpy_feather")
-        .with_quest("river_dock_clear"),
+        .with_quest("river_dock_clear")
+        .with_quest("harpy_feather_collect"),
     );
 
     // ── Quests ────────────────────────────────────────────────────────────────
@@ -1408,6 +1461,786 @@ pub fn build_narrative() -> (NpcRegistry, QuestLog) {
         QuestReward::new(80, 10),
     ));
 
+    // ── Thornvale Village Quests (total: 5+) ─────────────────────────────────
+
+    // Quest: Marta's Remedy
+    quest_log.register(Quest::new(
+        "thornvale_herbalist",
+        "Marta's Remedy",
+        "Innkeeper Marta needs fresh herbs to brew medicine for sick villagers. \
+         Venture into the valley or forest and gather what you can.",
+        "innkeeper_marta",
+        vec![
+            QuestObjective {
+                description: "Collect herbs (5)".to_string(),
+                kind: ObjectiveKind::CollectItem {
+                    item_id: "herbs".to_string(), required: 5, current: 0,
+                },
+            },
+        ],
+        QuestReward::new(120, 15).with_item("health_potion"),
+    ));
+
+    // Quest: Market Day
+    quest_log.register(Quest::new(
+        "thornvale_market_supply",
+        "Market Day",
+        "Merchant Serah needs to restock her market stall before the week's end. \
+         Bring her leather for armour work and iron ingots for trade.",
+        "merchant_serah",
+        vec![
+            QuestObjective {
+                description: "Collect leather (4)".to_string(),
+                kind: ObjectiveKind::CollectItem {
+                    item_id: "leather".to_string(), required: 4, current: 0,
+                },
+            },
+            QuestObjective {
+                description: "Collect iron ingots (2)".to_string(),
+                kind: ObjectiveKind::CollectItem {
+                    item_id: "iron_ingot".to_string(), required: 2, current: 0,
+                },
+            },
+        ],
+        QuestReward::new(150, 25),
+    ));
+
+    // ── Ashwood Forest Quests (total: 6+) ────────────────────────────────────
+
+    // Quest: Wood for the Forge
+    quest_log.register(Quest::new(
+        "ashwood_lumber_run",
+        "Wood for the Forge",
+        "Blacksmith Grund needs hardwood fuel for his forge. A good supply \
+         of wood can be found in the Ashwood Forest — if you can survive long \
+         enough to collect it.",
+        "blacksmith_grund",
+        vec![
+            QuestObjective {
+                description: "Reach the Ashwood Forest edge".to_string(),
+                kind: ObjectiveKind::ReachLocation {
+                    location_id: "ashwood_edge".to_string(), reached: false,
+                },
+            },
+            QuestObjective {
+                description: "Collect wood (4)".to_string(),
+                kind: ObjectiveKind::CollectItem {
+                    item_id: "wood".to_string(), required: 4, current: 0,
+                },
+            },
+        ],
+        QuestReward::new(100, 15).with_item("wood_shaft"),
+    ));
+
+    // Quest: Spider Problem
+    quest_log.register(Quest::new(
+        "ashwood_spider_hunt",
+        "Spider Problem",
+        "Innkeeper Marta says forest spiders have been creeping closer to Thornvale, \
+         frightening travellers on the roads. She wants them dealt with.",
+        "innkeeper_marta",
+        vec![
+            QuestObjective {
+                description: "Kill forest spiders (5)".to_string(),
+                kind: ObjectiveKind::KillEnemy {
+                    enemy_id: "forest_spider".to_string(), required: 5, current: 0,
+                },
+            },
+        ],
+        QuestReward::new(200, 20).with_item("antidote"),
+    ));
+
+    // Quest: Forest Watch
+    quest_log.register(Quest::new(
+        "ashwood_forest_patrol",
+        "Forest Watch",
+        "Guard Torven has been asked to patrol the Ashwood Forest roads but \
+         cannot leave his post at the gate. Patrol the forest on his behalf — \
+         clear out the wolves and push through to the depths.",
+        "guard_torven",
+        vec![
+            QuestObjective {
+                description: "Kill wolves (5)".to_string(),
+                kind: ObjectiveKind::KillEnemy {
+                    enemy_id: "wolf".to_string(), required: 5, current: 0,
+                },
+            },
+            QuestObjective {
+                description: "Reach the Ashwood depths".to_string(),
+                kind: ObjectiveKind::ReachLocation {
+                    location_id: "ashwood_depths".to_string(), reached: false,
+                },
+            },
+        ],
+        QuestReward::new(250, 25).with_item("shortbow"),
+    ));
+
+    // Quest: The Ancient Grove
+    quest_log.register(Quest::new(
+        "ashwood_ancient_grove_discovery",
+        "The Ancient Grove",
+        "Scholar Lyria has read references to a sacred grove deep in the Ashwood — \
+         a place of ancient druidic power that was corrupted long ago. She asks you \
+         to find it and document what you find.",
+        "scholar_lyria",
+        vec![
+            QuestObjective {
+                description: "Reach the Ashwood Ancient Grove".to_string(),
+                kind: ObjectiveKind::ReachLocation {
+                    location_id: "ashwood_ancient_grove".to_string(), reached: false,
+                },
+            },
+        ],
+        QuestReward::new(300, 30),
+    ));
+
+    // Quest: The Treant Lord — Ashwood Boss
+    quest_log.register(Quest::new(
+        "ashwood_treant_lord",
+        "Lord of the Blighted Grove",
+        "Ranger Vex has determined that the source of the forest's corruption is the \
+         Treant Lord — an ancient, twisted treant that commands the Ashwood Ancient \
+         Grove. Destroy it and collect its bark as proof of the deed.",
+        "ranger_vex",
+        vec![
+            QuestObjective {
+                description: "Reach the Ashwood Ancient Grove".to_string(),
+                kind: ObjectiveKind::ReachLocation {
+                    location_id: "ashwood_ancient_grove".to_string(), reached: false,
+                },
+            },
+            QuestObjective {
+                description: "Defeat the Treant Lord".to_string(),
+                kind: ObjectiveKind::KillEnemy {
+                    enemy_id: "treant_lord".to_string(), required: 1, current: 0,
+                },
+            },
+            QuestObjective {
+                description: "Collect Treant Bark (3)".to_string(),
+                kind: ObjectiveKind::CollectItem {
+                    item_id: "treant_bark".to_string(), required: 3, current: 0,
+                },
+            },
+        ],
+        QuestReward::new(800, 80).with_item("ancient_treant_staff"),
+    ));
+
+    // ── Bog & Shadow Cave Quests (total: 6+) ─────────────────────────────────
+
+    // Quest: Bogdan's Brew
+    quest_log.register(Quest::new(
+        "bog_moss_harvest",
+        "Bogdan's Brew",
+        "Hermit Bogdan needs bog moss to brew his restorative tonics. \
+         The moss grows in abundance through the bog — if you survive long \
+         enough to collect it.",
+        "hermit_bogdan",
+        vec![
+            QuestObjective {
+                description: "Collect bog moss (5)".to_string(),
+                kind: ObjectiveKind::CollectItem {
+                    item_id: "bog_moss".to_string(), required: 5, current: 0,
+                },
+            },
+        ],
+        QuestReward::new(150, 15).with_item("antidote"),
+    ));
+
+    // Quest: Bog Pests
+    quest_log.register(Quest::new(
+        "bog_pest_control",
+        "Bog Pests",
+        "Hermit Bogdan complains that bog crawlers have been multiplying out of \
+         control this season, destroying his carefully tended herb patches. \
+         Cull their numbers.",
+        "hermit_bogdan",
+        vec![
+            QuestObjective {
+                description: "Kill bog crawlers (5)".to_string(),
+                kind: ObjectiveKind::KillEnemy {
+                    enemy_id: "bog_crawler".to_string(), required: 5, current: 0,
+                },
+            },
+        ],
+        QuestReward::new(200, 25),
+    ));
+
+    // Quest: Swamp Witch Coven
+    quest_log.register(Quest::new(
+        "bog_witch_warning",
+        "The Witch Coven",
+        "Hermit Bogdan warns that the swamp witches have been growing bolder — \
+         their rituals are disturbing the bog's balance and poisoning the water. \
+         Drive off their coven.",
+        "hermit_bogdan",
+        vec![
+            QuestObjective {
+                description: "Kill swamp witches (3)".to_string(),
+                kind: ObjectiveKind::KillEnemy {
+                    enemy_id: "swamp_witch".to_string(), required: 3, current: 0,
+                },
+            },
+        ],
+        QuestReward::new(300, 35).with_item("clarity_potion"),
+    ));
+
+    // Quest: The Queen of the Bog — Bog Boss
+    quest_log.register(Quest::new(
+        "bog_witch_queen",
+        "The Queen of the Bog",
+        "Elder Aldric has heard that the swamp witches are led by an ancient queen \
+         of terrible power, dwelling in a hut at the deepest part of the bog. \
+         She must be dealt with before her influence reaches Thornvale.",
+        "elder_aldric",
+        vec![
+            QuestObjective {
+                description: "Reach the Bog Witch's Hut".to_string(),
+                kind: ObjectiveKind::ReachLocation {
+                    location_id: "bog_witchhut".to_string(), reached: false,
+                },
+            },
+            QuestObjective {
+                description: "Defeat the Swamp Witch Queen".to_string(),
+                kind: ObjectiveKind::KillEnemy {
+                    enemy_id: "swamp_witch_queen".to_string(), required: 1, current: 0,
+                },
+            },
+        ],
+        QuestReward::new(700, 70).with_item("bog_queen_amulet"),
+    ));
+
+    // Quest: Secrets Below
+    quest_log.register(Quest::new(
+        "shadow_hidden_chamber",
+        "Secrets Below",
+        "Hermit Bogdan suspects the goblins in the shadow cave are hiding something \
+         of value in a secret chamber. Explore the depths and find the hidden room.",
+        "hermit_bogdan",
+        vec![
+            QuestObjective {
+                description: "Reach the shadow cave hidden chamber".to_string(),
+                kind: ObjectiveKind::ReachLocation {
+                    location_id: "shadow_cave_hidden_chamber".to_string(), reached: false,
+                },
+            },
+        ],
+        QuestReward::new(350, 40),
+    ));
+
+    // ── Ironmere Keep Quests (total: 5+) ─────────────────────────────────────
+
+    // Quest: Silence the Archers
+    quest_log.register(Quest::new(
+        "ironmere_archer_hunt",
+        "Silence the Archers",
+        "Guard Torven reports that goblin archers on the Ironmere approach are \
+         picking off valley travellers from the ruins. Clear them out before \
+         the road becomes completely impassable.",
+        "guard_torven",
+        vec![
+            QuestObjective {
+                description: "Kill goblin archers (4)".to_string(),
+                kind: ObjectiveKind::KillEnemy {
+                    enemy_id: "goblin_archer".to_string(), required: 4, current: 0,
+                },
+            },
+        ],
+        QuestReward::new(300, 30).with_item("shortbow"),
+    ));
+
+    // Quest: Free the Captives
+    quest_log.register(Quest::new(
+        "ironmere_free_captives",
+        "Free the Captives",
+        "Elder Aldric has word that the goblins have taken prisoners — valley folk \
+         dragged from their farms and locked in the keep's dungeon. Find the dungeon \
+         and see what can be done.",
+        "elder_aldric",
+        vec![
+            QuestObjective {
+                description: "Reach the Ironmere dungeon".to_string(),
+                kind: ObjectiveKind::ReachLocation {
+                    location_id: "ironmere_dungeon".to_string(), reached: false,
+                },
+            },
+        ],
+        QuestReward::new(400, 50),
+    ));
+
+    // Quest: The Iron Dungeon
+    quest_log.register(Quest::new(
+        "ironmere_dungeon_clear",
+        "The Iron Dungeon",
+        "The Ironmere dungeon harbours not just living goblins but the shades of \
+         those who perished there. Elder Aldric wants both threats eliminated \
+         so that the dungeon can be reclaimed.",
+        "elder_aldric",
+        vec![
+            QuestObjective {
+                description: "Defeat the Ironmere Jailer".to_string(),
+                kind: ObjectiveKind::KillEnemy {
+                    enemy_id: "ironmere_jailer".to_string(), required: 1, current: 0,
+                },
+            },
+            QuestObjective {
+                description: "Defeat dungeon shades (3)".to_string(),
+                kind: ObjectiveKind::KillEnemy {
+                    enemy_id: "dungeon_shade".to_string(), required: 3, current: 0,
+                },
+            },
+        ],
+        QuestReward::new(500, 55).with_item("iron_chainmail"),
+    ));
+
+    // Quest: The Warlord's Hoard
+    quest_log.register(Quest::new(
+        "ironmere_warlord_hoard",
+        "The Warlord's Hoard",
+        "Merchant Serah has heard that the goblin warlord hoards a significant supply \
+         of iron ingots seized from valley merchants. Retrieve them from the keep tower.",
+        "merchant_serah",
+        vec![
+            QuestObjective {
+                description: "Reach the keep tower".to_string(),
+                kind: ObjectiveKind::ReachLocation {
+                    location_id: "ironmere_tower".to_string(), reached: false,
+                },
+            },
+            QuestObjective {
+                description: "Collect iron ingots (3)".to_string(),
+                kind: ObjectiveKind::CollectItem {
+                    item_id: "iron_ingot".to_string(), required: 3, current: 0,
+                },
+            },
+        ],
+        QuestReward::new(350, 45),
+    ));
+
+    // ── Crystal Cave Quests (total: 6+) ──────────────────────────────────────
+
+    // Quest: Bat Problem
+    quest_log.register(Quest::new(
+        "crystal_cave_bat_nest",
+        "Bat Problem",
+        "Guard Torven reports that giant bats from the Crystal Cave have been \
+         swooping down on travellers near the northern valley. Their numbers need \
+         to be reduced.",
+        "guard_torven",
+        vec![
+            QuestObjective {
+                description: "Kill giant bats (5)".to_string(),
+                kind: ObjectiveKind::KillEnemy {
+                    enemy_id: "giant_bat".to_string(), required: 5, current: 0,
+                },
+            },
+        ],
+        QuestReward::new(180, 20),
+    ));
+
+    // Quest: The Cave Bear
+    quest_log.register(Quest::new(
+        "crystal_cave_bear_trophy",
+        "The Cave Bear",
+        "Ranger Vex wants proof that the cave bear menace in the Crystal Cave has \
+         been dealt with. Defeat two cave bears and collect their claws as trophies.",
+        "ranger_vex",
+        vec![
+            QuestObjective {
+                description: "Kill cave bears (2)".to_string(),
+                kind: ObjectiveKind::KillEnemy {
+                    enemy_id: "cave_bear".to_string(), required: 2, current: 0,
+                },
+            },
+            QuestObjective {
+                description: "Collect bear claws (2)".to_string(),
+                kind: ObjectiveKind::CollectItem {
+                    item_id: "bear_claw".to_string(), required: 2, current: 0,
+                },
+            },
+        ],
+        QuestReward::new(250, 30),
+    ));
+
+    // Quest: Crystalline Ingredients
+    quest_log.register(Quest::new(
+        "crystal_dust_harvest",
+        "Crystalline Ingredients",
+        "Hermit Bogdan needs crystalline dust for his alchemical experiments. \
+         It can only be gathered from the Crystal Cave's inner formations.",
+        "hermit_bogdan",
+        vec![
+            QuestObjective {
+                description: "Collect crystalline dust (5)".to_string(),
+                kind: ObjectiveKind::CollectItem {
+                    item_id: "crystalline_dust".to_string(), required: 5, current: 0,
+                },
+            },
+        ],
+        QuestReward::new(200, 25).with_item("clarity_potion"),
+    ));
+
+    // Quest: The Crystal Depths
+    quest_log.register(Quest::new(
+        "crystal_cave_depths_expedition",
+        "The Crystal Depths",
+        "Ranger Vex has heard rumours of a hidden seam deep in the Crystal Cave \
+         containing void crystals — crystals of exceptional power unlike any seen \
+         before. Reach the hidden seam and bring back a sample.",
+        "ranger_vex",
+        vec![
+            QuestObjective {
+                description: "Reach the Crystal Cave hidden seam".to_string(),
+                kind: ObjectiveKind::ReachLocation {
+                    location_id: "crystal_cave_hidden_seam".to_string(), reached: false,
+                },
+            },
+            QuestObjective {
+                description: "Collect a void crystal".to_string(),
+                kind: ObjectiveKind::CollectItem {
+                    item_id: "void_crystal".to_string(), required: 1, current: 0,
+                },
+            },
+        ],
+        QuestReward::new(400, 45).with_item("crystal_ring"),
+    ));
+
+    // Quest: The Crystal Elemental — Crystal Cave Boss
+    quest_log.register(Quest::new(
+        "crystal_elemental_boss",
+        "The Crystal Elemental",
+        "Ranger Vex warns that a crystal elemental of immense power guards the \
+         deepest seam of the Crystal Cave. It must be defeated before the seam \
+         can be safely mined.",
+        "ranger_vex",
+        vec![
+            QuestObjective {
+                description: "Defeat the Crystal Elemental".to_string(),
+                kind: ObjectiveKind::KillEnemy {
+                    enemy_id: "crystal_elemental".to_string(), required: 1, current: 0,
+                },
+            },
+        ],
+        QuestReward::new(800, 90).with_item("void_crystal_ring"),
+    ));
+
+    // ── Valley Floor Quests (total: 3+) ──────────────────────────────────────
+
+    // Quest: Know the Land
+    quest_log.register(Quest::new(
+        "valley_explorer",
+        "Know the Land",
+        "Guard Torven asks that you scout the northern and eastern reaches of the \
+         valley, noting any goblin activity or bandit movements.",
+        "guard_torven",
+        vec![
+            QuestObjective {
+                description: "Reach the northern valley".to_string(),
+                kind: ObjectiveKind::ReachLocation {
+                    location_id: "valley_north".to_string(), reached: false,
+                },
+            },
+            QuestObjective {
+                description: "Reach the eastern valley flats".to_string(),
+                kind: ObjectiveKind::ReachLocation {
+                    location_id: "valley_east".to_string(), reached: false,
+                },
+            },
+        ],
+        QuestReward::new(200, 25),
+    ));
+
+    // Quest: Bandit Camp
+    quest_log.register(Quest::new(
+        "bandit_camp_raid",
+        "Clean Out the Camp",
+        "Guard Torven has located a bandit camp at the abandoned farmstead. \
+         Drive out the bandits and push their chief back.",
+        "guard_torven",
+        vec![
+            QuestObjective {
+                description: "Kill valley bandits (5)".to_string(),
+                kind: ObjectiveKind::KillEnemy {
+                    enemy_id: "bandit".to_string(), required: 5, current: 0,
+                },
+            },
+            QuestObjective {
+                description: "Reach the abandoned farmstead".to_string(),
+                kind: ObjectiveKind::ReachLocation {
+                    location_id: "abandoned_farmstead".to_string(), reached: false,
+                },
+            },
+        ],
+        QuestReward::new(300, 30).with_item("bandit_cloak"),
+    ));
+
+    // Quest: Old Watchtower
+    quest_log.register(Quest::new(
+        "valley_watchtower_survey",
+        "Old Watchtower",
+        "Guard Torven recalls that an old watchtower on the valley's northeast rise \
+         once gave fine views of goblin approaches. Survey it and report back.",
+        "guard_torven",
+        vec![
+            QuestObjective {
+                description: "Reach the ruined watchtower".to_string(),
+                kind: ObjectiveKind::ReachLocation {
+                    location_id: "valley_watchtower".to_string(), reached: false,
+                },
+            },
+        ],
+        QuestReward::new(150, 15).with_item("shortbow"),
+    ));
+
+    // ── Barrow Quests (additional, total: 5+) ────────────────────────────────
+
+    // Quest: Barrow Wraiths
+    quest_log.register(Quest::new(
+        "barrow_wraith_hunt",
+        "Barrow Wraiths",
+        "Scholar Lyria is studying the barrow's supernatural manifestations. \
+         She needs you to drive off the barrow wraiths to allow her research \
+         team to safely excavate.",
+        "scholar_lyria",
+        vec![
+            QuestObjective {
+                description: "Defeat barrow wraiths (3)".to_string(),
+                kind: ObjectiveKind::KillEnemy {
+                    enemy_id: "wraith".to_string(), required: 3, current: 0,
+                },
+            },
+        ],
+        QuestReward::new(400, 45).with_item("ghost_essence"),
+    ));
+
+    // Quest: Ancient Currency
+    quest_log.register(Quest::new(
+        "barrow_coin_collection",
+        "Ancient Currency",
+        "Scholar Lyria wants to study the ancient coinage found in the barrow \
+         and surrounding ruins. Collect enough ancient coins for her research.",
+        "scholar_lyria",
+        vec![
+            QuestObjective {
+                description: "Collect ancient coins (8)".to_string(),
+                kind: ObjectiveKind::CollectItem {
+                    item_id: "ancient_coin".to_string(), required: 8, current: 0,
+                },
+            },
+        ],
+        QuestReward::new(200, 30),
+    ));
+
+    // Quest: Barrow High Knight — Barrow Boss
+    quest_log.register(Quest::new(
+        "barrow_high_knight",
+        "The High Knight's Rest",
+        "Elder Aldric has been told that a particularly powerful barrow knight — \
+         a chieftain's champion — haunts the burial lord's chamber. This knight's \
+         restless spirit cannot be allowed to grow stronger.",
+        "elder_aldric",
+        vec![
+            QuestObjective {
+                description: "Reach the barrow lord's chamber".to_string(),
+                kind: ObjectiveKind::ReachLocation {
+                    location_id: "barrow_lord_chamber".to_string(), reached: false,
+                },
+            },
+            QuestObjective {
+                description: "Defeat barrow knights (3)".to_string(),
+                kind: ObjectiveKind::KillEnemy {
+                    enemy_id: "barrow_knight".to_string(), required: 3, current: 0,
+                },
+            },
+            QuestObjective {
+                description: "Defeat the barrow wraith".to_string(),
+                kind: ObjectiveKind::KillEnemy {
+                    enemy_id: "wraith".to_string(), required: 1, current: 0,
+                },
+            },
+        ],
+        QuestReward::new(600, 65).with_item("barrow_lord_helm"),
+    ));
+
+    // ── Valley King's Tomb Quests (additional, total: 5+) ────────────────────
+
+    // Quest: Restless Dead
+    quest_log.register(Quest::new(
+        "tomb_skeleton_hunt",
+        "Restless Dead",
+        "Elder Aldric worries that the animated skeletons spilling out of the \
+         Valley King's Tomb will threaten the southern valley. Drive them back.",
+        "elder_aldric",
+        vec![
+            QuestObjective {
+                description: "Kill skeleton warriors (5)".to_string(),
+                kind: ObjectiveKind::KillEnemy {
+                    enemy_id: "skeleton_warrior".to_string(), required: 5, current: 0,
+                },
+            },
+        ],
+        QuestReward::new(300, 30).with_item("iron_short_sword"),
+    ));
+
+    // Quest: The Mummified Legion
+    quest_log.register(Quest::new(
+        "tomb_mummy_hunt",
+        "The Mummified Legion",
+        "The Valley King's tomb is guarded by an army of mummified guards preserved \
+         for an age. Elder Aldric asks you to thin their numbers before sending a \
+         proper expedition.",
+        "elder_aldric",
+        vec![
+            QuestObjective {
+                description: "Defeat mummified guards (3)".to_string(),
+                kind: ObjectiveKind::KillEnemy {
+                    enemy_id: "mummified_guard".to_string(), required: 3, current: 0,
+                },
+            },
+        ],
+        QuestReward::new(450, 50).with_item("ancient_coin"),
+    ));
+
+    // Quest: Valley King's Records
+    quest_log.register(Quest::new(
+        "tomb_inscription_research",
+        "Valley King's Records",
+        "Scholar Lyria needs to personally document the inscriptions in both \
+         the tomb antechamber and sanctum. She needs someone to clear the way.",
+        "scholar_lyria",
+        vec![
+            QuestObjective {
+                description: "Reach the tomb antechamber".to_string(),
+                kind: ObjectiveKind::ReachLocation {
+                    location_id: "tomb_antechamber".to_string(), reached: false,
+                },
+            },
+            QuestObjective {
+                description: "Reach the tomb sanctum".to_string(),
+                kind: ObjectiveKind::ReachLocation {
+                    location_id: "tomb_sanctum".to_string(), reached: false,
+                },
+            },
+        ],
+        QuestReward::new(400, 40).with_item("ancient_tome"),
+    ));
+
+    // Quest: Cleanse the Sanctum
+    quest_log.register(Quest::new(
+        "tomb_spectral_cleansing",
+        "Cleanse the Sanctum",
+        "Scholar Lyria believes the wraiths in the Valley King's Tomb are anchored \
+         to the sanctum by the burial rites. Defeating them may allow the tomb to \
+         be safely studied.",
+        "scholar_lyria",
+        vec![
+            QuestObjective {
+                description: "Defeat wraiths in the tomb (3)".to_string(),
+                kind: ObjectiveKind::KillEnemy {
+                    enemy_id: "wraith".to_string(), required: 3, current: 0,
+                },
+            },
+        ],
+        QuestReward::new(500, 55).with_item("clarity_potion"),
+    ));
+
+    // ── Additional Zone Quests (bringing each zone to 5+) ────────────────────
+
+    // Ember Coast: Saltstone Crab Hunt (→ total 5)
+    quest_log.register(Quest::new(
+        "saltstone_crab_hunt",
+        "Crab Season",
+        "Fisherman Aldric says saltstone crabs have been multiplying on the shore, \
+         making it impossible to set traps. Cull their numbers.",
+        "fisherman_aldric",
+        vec![
+            QuestObjective {
+                description: "Kill saltstone crabs (5)".to_string(),
+                kind: ObjectiveKind::KillEnemy {
+                    enemy_id: "saltstone_crab".to_string(), required: 5, current: 0,
+                },
+            },
+        ],
+        QuestReward::new(200, 20).with_item("sea_salt"),
+    ));
+
+    // Iron Quarry: Ore Delivery (→ total 5)
+    quest_log.register(Quest::new(
+        "quarry_ore_delivery",
+        "Iron for Thornvale",
+        "Overseer Maren needs ore delivered to Thornvale's smith. Gather iron ore \
+         from the quarry entrance and help keep the valley supplied.",
+        "mining_overseer",
+        vec![
+            QuestObjective {
+                description: "Collect iron ore (5)".to_string(),
+                kind: ObjectiveKind::CollectItem {
+                    item_id: "iron_ore".to_string(), required: 5, current: 0,
+                },
+            },
+        ],
+        QuestReward::new(180, 25),
+    ));
+
+    // Sunken Temple: Temple Offerings (→ total 5)
+    quest_log.register(Quest::new(
+        "temple_coin_recovery",
+        "Temple Offerings",
+        "Scholar Lyria wants to catalogue the ancient coin offerings left in the \
+         Sunken Temple by its last worshippers. Collect what you find there.",
+        "scholar_lyria",
+        vec![
+            QuestObjective {
+                description: "Collect ancient coins (6) in the temple".to_string(),
+                kind: ObjectiveKind::CollectItem {
+                    item_id: "ancient_coin".to_string(), required: 6, current: 0,
+                },
+            },
+        ],
+        QuestReward::new(250, 35),
+    ));
+
+    // Frostpeak: Snow Eagle Menace (→ total 5)
+    quest_log.register(Quest::new(
+        "frozen_eagle_hunt",
+        "Snow Eagle Menace",
+        "Frost Sage Erindel asks you to cull the snow eagles on the Frostpeak \
+         approach — their swooping attacks have been injuring climbers.",
+        "frost_sage",
+        vec![
+            QuestObjective {
+                description: "Kill snow eagles (5)".to_string(),
+                kind: ObjectiveKind::KillEnemy {
+                    enemy_id: "snow_eagle".to_string(), required: 5, current: 0,
+                },
+            },
+        ],
+        QuestReward::new(180, 20).with_item("harpy_feather"),
+    ));
+
+    // Merchant's Crossing: Trade Supplies (→ total 5)
+    quest_log.register(Quest::new(
+        "merchant_goods_delivery",
+        "Trade Supplies",
+        "Merchant Aldis at the Crossing needs a shipment of driftwood and sea salt \
+         for the river traders. Gather these from the coastal areas.",
+        "merchant_aldis",
+        vec![
+            QuestObjective {
+                description: "Collect driftwood (3)".to_string(),
+                kind: ObjectiveKind::CollectItem {
+                    item_id: "driftwood".to_string(), required: 3, current: 0,
+                },
+            },
+            QuestObjective {
+                description: "Collect sea salt (3)".to_string(),
+                kind: ObjectiveKind::CollectItem {
+                    item_id: "sea_salt".to_string(), required: 3, current: 0,
+                },
+            },
+        ],
+        QuestReward::new(150, 20).with_item("health_potion"),
+    ));
+
     (npcs, quest_log)
 }
 
@@ -1523,6 +2356,53 @@ mod tests {
         for qid in &["crystal_cave_clear", "shadow_cave_delve", "barrow_research", "valley_king_tomb"] {
             assert!(log.quests.contains_key(*qid), "Quest '{}' should be registered", qid);
         }
+    }
+
+    #[test]
+    fn test_new_instance_quests_registered() {
+        let (_, log) = build_narrative();
+        let new_quests = [
+            "ashwood_treant_lord", "bog_witch_queen", "ironmere_dungeon_clear",
+            "crystal_elemental_boss", "shadow_hidden_chamber",
+            "thornvale_herbalist", "thornvale_market_supply",
+            "ashwood_lumber_run", "ashwood_spider_hunt", "ashwood_forest_patrol",
+            "ashwood_ancient_grove_discovery",
+            "bog_moss_harvest", "bog_pest_control", "bog_witch_warning",
+            "ironmere_archer_hunt", "ironmere_free_captives", "ironmere_warlord_hoard",
+            "crystal_cave_bat_nest", "crystal_cave_bear_trophy", "crystal_dust_harvest",
+            "crystal_cave_depths_expedition",
+            "valley_explorer", "bandit_camp_raid", "valley_watchtower_survey",
+            "barrow_wraith_hunt", "barrow_coin_collection", "barrow_high_knight",
+            "tomb_skeleton_hunt", "tomb_mummy_hunt", "tomb_inscription_research",
+            "tomb_spectral_cleansing",
+            "saltstone_crab_hunt", "quarry_ore_delivery", "temple_coin_recovery",
+            "frozen_eagle_hunt", "merchant_goods_delivery",
+        ];
+        for qid in &new_quests {
+            assert!(log.quests.contains_key(*qid), "Quest '{}' should be registered", qid);
+        }
+    }
+
+    #[test]
+    fn test_boss_quests_target_boss_enemies() {
+        let (_, log) = build_narrative();
+        let treant = log.quests.get("ashwood_treant_lord").unwrap();
+        let has_treant_lord = treant.objectives.iter().any(|o|
+            matches!(&o.kind, ObjectiveKind::KillEnemy { enemy_id, .. } if enemy_id == "treant_lord")
+        );
+        assert!(has_treant_lord, "ashwood_treant_lord quest should target treant_lord");
+
+        let bog = log.quests.get("bog_witch_queen").unwrap();
+        let has_queen = bog.objectives.iter().any(|o|
+            matches!(&o.kind, ObjectiveKind::KillEnemy { enemy_id, .. } if enemy_id == "swamp_witch_queen")
+        );
+        assert!(has_queen, "bog_witch_queen quest should target swamp_witch_queen");
+
+        let crystal = log.quests.get("crystal_elemental_boss").unwrap();
+        let has_elemental = crystal.objectives.iter().any(|o|
+            matches!(&o.kind, ObjectiveKind::KillEnemy { enemy_id, .. } if enemy_id == "crystal_elemental")
+        );
+        assert!(has_elemental, "crystal_elemental_boss quest should target crystal_elemental");
     }
 
     #[test]

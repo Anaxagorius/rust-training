@@ -897,6 +897,199 @@ pub fn all_enemy_templates() -> Vec<EnemyTemplate> {
             abilities: vec!["Miasma Cloud".to_string(), "Drain Life".to_string()],
             on_death_status: None,
         },
+
+        // ── New Sub-Area Enemies ──────────────────────────────────────────────
+        EnemyTemplate {
+            id: "bog_lurker".to_string(),
+            name: "Bog Lurker".to_string(),
+            level: 3, base_hp: 48,
+            stats: Stats::new(6, 2, 2, 8, 4, 1),
+            armor: 2, weapon_damage: 9,
+            damage_type: DamageType::Poison,
+            resistances: { let mut r = ElementalResistances::none(); r.nature = 20; r.poison = 30; r },
+            xp_reward: 55, gold_min: 0, gold_max: 3,
+            loot_item_ids: vec!["bog_moss".to_string(), "sinew".to_string()],
+            description: "A massive amphibious predator lurking beneath the bog's dark surface, \
+                          lunging from the murk to drag prey into the depths.".to_string(),
+            abilities: vec!["Drag Under".to_string()],
+            on_death_status: Some(StatusEffect::Poison { damage_per_turn: 2, turns_remaining: 2 }),
+        },
+        EnemyTemplate {
+            id: "marsh_troll".to_string(),
+            name: "Marsh Troll".to_string(),
+            level: 5, base_hp: 105,
+            stats: Stats::new(14, 2, 2, 15, 3, 1),
+            armor: 5, weapon_damage: 17,
+            damage_type: DamageType::Physical,
+            resistances: { let mut r = ElementalResistances::none(); r.physical = 10; r.nature = 20; r.fire = -25; r },
+            xp_reward: 175, gold_min: 0, gold_max: 6,
+            loot_item_ids: vec!["bog_moss".to_string(), "iron_ingot".to_string()],
+            description: "A slimy, moss-covered troll that stalks the deepest bog pools. Immensely \
+                          strong and capable of limited regeneration in wet terrain.".to_string(),
+            abilities: vec!["Bog Slam".to_string(), "Regenerate".to_string(), "Mire Pull".to_string()],
+            on_death_status: None,
+        },
+        EnemyTemplate {
+            id: "ashwood_treant".to_string(),
+            name: "Ashwood Treant".to_string(),
+            level: 5, base_hp: 120,
+            stats: Stats::new(15, 1, 1, 18, 2, 1),
+            armor: 7, weapon_damage: 16,
+            damage_type: DamageType::Nature,
+            resistances: { let mut r = ElementalResistances::none(); r.physical = 20; r.nature = 50; r.fire = -40; r.poison = 30; r },
+            xp_reward: 190, gold_min: 0, gold_max: 0,
+            loot_item_ids: vec!["treant_bark".to_string(), "wood".to_string()],
+            description: "An ancient ash tree animated by nature magic corrupted by decades of \
+                          darkness. Its bark is harder than iron and its roots crack the earth.".to_string(),
+            abilities: vec!["Root Slam".to_string(), "Bark Shield".to_string()],
+            on_death_status: None,
+        },
+        EnemyTemplate {
+            id: "ironmere_jailer".to_string(),
+            name: "Ironmere Jailer".to_string(),
+            level: 5, base_hp: 95,
+            stats: Stats::new(12, 4, 4, 10, 6, 3),
+            armor: 8, weapon_damage: 14,
+            damage_type: DamageType::Physical,
+            resistances: ElementalResistances::none(),
+            xp_reward: 170, gold_min: 5, gold_max: 20,
+            loot_item_ids: vec!["iron_ingot".to_string(), "dungeon_warden_helm".to_string()],
+            description: "A goblin jailer who guards the keep dungeon with a spiked club and \
+                          an iron helmet. Cruel even by goblin standards.".to_string(),
+            abilities: vec!["Iron Grip".to_string(), "Dungeon Roar".to_string()],
+            on_death_status: None,
+        },
+        EnemyTemplate {
+            id: "dungeon_shade".to_string(),
+            name: "Dungeon Shade".to_string(),
+            level: 4, base_hp: 55,
+            stats: Stats::new(5, 10, 8, 5, 9, 2),
+            armor: 0, weapon_damage: 12,
+            damage_type: DamageType::Psychic,
+            resistances: { let mut r = ElementalResistances::none(); r.poison = 100; r.physical = 35; r },
+            xp_reward: 90, gold_min: 0, gold_max: 0,
+            loot_item_ids: vec!["ghost_essence".to_string()],
+            description: "The tortured spirit of a prisoner who perished in Ironmere Keep's dungeon — \
+                          drifting and hateful, lashing out at any living thing.".to_string(),
+            abilities: vec!["Chill Touch".to_string(), "Misery Wail".to_string()],
+            on_death_status: None,
+        },
+        EnemyTemplate {
+            id: "shadow_stalker".to_string(),
+            name: "Shadow Stalker".to_string(),
+            level: 5, base_hp: 80,
+            stats: Stats::new(8, 8, 6, 8, 12, 3),
+            armor: 2, weapon_damage: 15,
+            damage_type: DamageType::Physical,
+            resistances: { let mut r = ElementalResistances::none(); r.physical = 15; r.poison = 25; r },
+            xp_reward: 165, gold_min: 3, gold_max: 12,
+            loot_item_ids: vec!["shadow_stone".to_string(), "tattered_cloth".to_string()],
+            description: "An ambush predator perfectly adapted to the shadow cave's darkness — \
+                          jet-black scales and fur, moving without sound, striking without warning.".to_string(),
+            abilities: vec!["Ambush Strike".to_string(), "Vanish".to_string(), "Shadow Pounce".to_string()],
+            on_death_status: None,
+        },
+
+        // ── Boss Encounters ───────────────────────────────────────────────────
+        EnemyTemplate {
+            id: "treant_lord".to_string(),
+            name: "Treant Lord".to_string(),
+            level: 8, base_hp: 220,
+            stats: Stats::new(20, 4, 2, 22, 2, 2),
+            armor: 12, weapon_damage: 26,
+            damage_type: DamageType::Nature,
+            resistances: { let mut r = ElementalResistances::none(); r.physical = 25; r.nature = 75; r.fire = -50; r.poison = 50; r },
+            xp_reward: 700, gold_min: 0, gold_max: 10,
+            loot_item_ids: vec!["treant_bark".to_string(), "ancient_treant_staff".to_string()],
+            description: "The lord of the Ashwood Ancient Grove — a colossal treant of twisted \
+                          black ash, its heart corrupted by centuries of dark magic. It commands \
+                          the grove's lesser treants and speaks with a voice like cracking timber.".to_string(),
+            abilities: vec!["Ancient Wrath".to_string(), "Grove Call".to_string(), "Entangle".to_string(), "Root Avalanche".to_string()],
+            on_death_status: None,
+        },
+        EnemyTemplate {
+            id: "swamp_witch_queen".to_string(),
+            name: "Swamp Witch Queen".to_string(),
+            level: 8, base_hp: 160,
+            stats: Stats::new(6, 18, 16, 8, 6, 10),
+            armor: 0, weapon_damage: 24,
+            damage_type: DamageType::Poison,
+            resistances: { let mut r = ElementalResistances::none(); r.poison = 100; r.nature = 60; r.fire = -10; r },
+            xp_reward: 750, gold_min: 10, gold_max: 30,
+            loot_item_ids: vec!["bog_queen_amulet".to_string(), "nightshade_leaf".to_string(), "witch_talisman".to_string()],
+            description: "The supreme matriarch of the bog's witch-women — ancient, powerful, \
+                          and utterly terrifying. She rules from her fetid hut at the deepest heart \
+                          of the bog, surrounded by thralls and the preserved corpses of those who \
+                          failed to appease her.".to_string(),
+            abilities: vec!["Coven Curse".to_string(), "Plague Cloud".to_string(), "Soul Drain".to_string(), "Hex Ward".to_string()],
+            on_death_status: None,
+        },
+        EnemyTemplate {
+            id: "crystal_elemental".to_string(),
+            name: "Crystal Elemental".to_string(),
+            level: 7, base_hp: 155,
+            stats: Stats::new(16, 10, 8, 18, 4, 2),
+            armor: 10, weapon_damage: 20,
+            damage_type: DamageType::Physical,
+            resistances: { let mut r = ElementalResistances::none(); r.physical = 35; r.nature = 25; r.poison = 100; r.fire = -20; r },
+            xp_reward: 550, gold_min: 0, gold_max: 20,
+            loot_item_ids: vec!["void_crystal".to_string(), "crystal_shard".to_string(), "crystalline_dust".to_string()],
+            description: "A rare and ancient elemental formed from the cave's most powerful crystal \
+                          formations. Its body refracts light into destructive beams of brilliant \
+                          energy that can blind and shatter stone.".to_string(),
+            abilities: vec!["Crystal Shatter".to_string(), "Refraction Beam".to_string(), "Crystal Storm".to_string(), "Resonance Pulse".to_string()],
+            on_death_status: None,
+        },
+
+        // ── Unique Wandering Encounters ───────────────────────────────────────
+        EnemyTemplate {
+            id: "vale_revenant".to_string(),
+            name: "The Vale Revenant".to_string(),
+            level: 6, base_hp: 90,
+            stats: Stats::new(10, 12, 8, 10, 8, 3),
+            armor: 3, weapon_damage: 17,
+            damage_type: DamageType::Psychic,
+            resistances: { let mut r = ElementalResistances::none(); r.poison = 100; r.physical = 30; r.fire = 10; r },
+            xp_reward: 280, gold_min: 0, gold_max: 0,
+            loot_item_ids: vec!["ghost_essence".to_string(), "ancient_coin".to_string()],
+            description: "A unique undead that drifts the Embervale valley — the spirit of an \
+                          ancient soldier who refuses to leave the land he once defended. It attacks \
+                          any who disturb its endless patrol.".to_string(),
+            abilities: vec!["Revenant Curse".to_string(), "Spectral Strike".to_string(), "Ancient Recall".to_string()],
+            on_death_status: None,
+        },
+        EnemyTemplate {
+            id: "scarred_outlaw".to_string(),
+            name: "Scarred Outlaw Karos".to_string(),
+            level: 4, base_hp: 68,
+            stats: Stats::new(10, 8, 6, 9, 8, 5),
+            armor: 4, weapon_damage: 13,
+            damage_type: DamageType::Physical,
+            resistances: ElementalResistances::none(),
+            xp_reward: 130, gold_min: 15, gold_max: 40,
+            loot_item_ids: vec!["iron_short_sword".to_string(), "health_potion".to_string()],
+            description: "A legendary bandit whose face is covered in burn scars. Karos has \
+                          terrorised the valley roads for years — cunning, brutal, and \
+                          surprisingly well-equipped for someone who lives in the wilderness.".to_string(),
+            abilities: vec!["Scar Frenzy".to_string(), "Opportunist Strike".to_string()],
+            on_death_status: None,
+        },
+        EnemyTemplate {
+            id: "fell_druid_spirit".to_string(),
+            name: "Fell Druid Spirit".to_string(),
+            level: 5, base_hp: 70,
+            stats: Stats::new(5, 14, 11, 6, 8, 5),
+            armor: 1, weapon_damage: 15,
+            damage_type: DamageType::Nature,
+            resistances: { let mut r = ElementalResistances::none(); r.poison = 75; r.nature = 60; r.physical = 20; r },
+            xp_reward: 200, gold_min: 0, gold_max: 8,
+            loot_item_ids: vec!["ghost_essence".to_string(), "treant_bark".to_string()],
+            description: "The corrupted spirit of an ancient forest druid who made a terrible \
+                          bargain for immortality and received only endless half-existence. It \
+                          wanders the Ashwood seeking to drain the life-force of living things.".to_string(),
+            abilities: vec!["Nature Curse".to_string(), "Life Sap".to_string(), "Spore Cloud".to_string()],
+            on_death_status: Some(StatusEffect::Poison { damage_per_turn: 2, turns_remaining: 3 }),
+        },
     ]
 }
 
@@ -1151,6 +1344,58 @@ pub fn all_items() -> Vec<Item> {
             stack_size: 1,
             quantity: 1,
             description: "An amulet bearing the temple's seal, granting its wearer arcane clarity. +3 INT, +1 WIS, +1 CHA.".to_string(),
+            effects: Vec::new(),
+            is_two_handed: false,
+        },
+
+        // ── New sub-area materials ────────────────────────────────────────────
+        Item::new_consumable("treant_bark", "Treant Bark", ItemType::CraftingMaterial, 15),
+        Item::new_consumable("shadow_stone", "Shadow Stone", ItemType::CraftingMaterial, 12),
+        Item::new_consumable("void_crystal", "Void Crystal", ItemType::CraftingMaterial, 20),
+
+        // ── New sub-area equipment ────────────────────────────────────────────
+        Item::new_armor("dungeon_warden_helm", "Dungeon Warden Helm", EquipSlot::Helmet, MaterialTier::Iron, ItemRarity::Uncommon, 5),
+
+        Item::new_weapon("ancient_treant_staff", "Ancient Treant Staff", ItemType::Spear, MaterialTier::Hardwood, ItemRarity::Legendary, 22),
+
+        // ── New sub-area unique accessories ──────────────────────────────────
+        Item {
+            id: "bog_queen_amulet".to_string(),
+            name: "Bog Queen's Amulet".to_string(),
+            item_type: ItemType::Amulet,
+            material: None,
+            rarity: ItemRarity::Legendary,
+            weight: 0.2,
+            value: 400,
+            damage_base: 0,
+            armor_base: 0,
+            stat_requirements: Stats::zeroed(),
+            stat_bonuses: Stats::new(2, 0, 2, 0, 0, 2),
+            equip_slot: Some(EquipSlot::Amulet),
+            stack_size: 1,
+            quantity: 1,
+            description: "The amulet of the Swamp Witch Queen, saturated with bog-magic. \
+                          Its surface writhes like living moss. +2 STR, +2 WIS, +2 CHA.".to_string(),
+            effects: Vec::new(),
+            is_two_handed: false,
+        },
+        Item {
+            id: "void_crystal_ring".to_string(),
+            name: "Void Crystal Ring".to_string(),
+            item_type: ItemType::Ring,
+            material: None,
+            rarity: ItemRarity::Rare,
+            weight: 0.1,
+            value: 180,
+            damage_base: 0,
+            armor_base: 0,
+            stat_requirements: Stats::zeroed(),
+            stat_bonuses: Stats::new(0, 3, 2, 0, 0, 0),
+            equip_slot: Some(EquipSlot::Ring1),
+            stack_size: 1,
+            quantity: 1,
+            description: "A ring set with a void crystal from the deepest crystal seam. \
+                          Pulses with cold radiance. +3 INT, +2 WIS.".to_string(),
             effects: Vec::new(),
             is_two_handed: false,
         },
@@ -1698,6 +1943,109 @@ pub fn all_loot_tables() -> Vec<LootTable> {
             ],
             gold_min: 20, gold_max: 60,
             roll_count: 3,
+        },
+        // ── New Sub-Area Instance Loot Tables ─────────────────────────────────
+        LootTable {
+            id: "ashwood_ancient_grove".to_string(),
+            flavor_text: "You search the ancient grove. Twisted roots conceal offerings left by \
+                          druids long dead — preserved by the grove's lingering magic despite the \
+                          corruption that has taken hold.".to_string(),
+            guaranteed_items: vec![
+                ("treant_bark".to_string(), 2),
+                ("wood".to_string(), 3),
+            ],
+            random_entries: vec![
+                LootEntry { item_id: "ancient_treant_staff".to_string(), weight: 40, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "herbs".to_string(), weight: 60, quantity_min: 2, quantity_max: 4 },
+                LootEntry { item_id: "health_potion".to_string(), weight: 50, quantity_min: 1, quantity_max: 2 },
+                LootEntry { item_id: "ghost_essence".to_string(), weight: 30, quantity_min: 1, quantity_max: 2 },
+                LootEntry { item_id: "wood_shaft".to_string(), weight: 55, quantity_min: 2, quantity_max: 4 },
+            ],
+            gold_min: 5, gold_max: 20,
+            roll_count: 3,
+        },
+        LootTable {
+            id: "bog_witchhut".to_string(),
+            flavor_text: "The witch queen's hut reeks of poisons and dark ritual. Shelves of \
+                          cursed components, bottled specimens, and stolen treasures line the \
+                          walls — a lifetime of hoarding by a very long-lived and very wicked \
+                          woman.".to_string(),
+            guaranteed_items: vec![
+                ("bog_moss".to_string(), 3),
+                ("nightshade_leaf".to_string(), 2),
+                ("witch_talisman".to_string(), 1),
+            ],
+            random_entries: vec![
+                LootEntry { item_id: "bog_queen_amulet".to_string(), weight: 60, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "antidote".to_string(), weight: 50, quantity_min: 1, quantity_max: 3 },
+                LootEntry { item_id: "clarity_potion".to_string(), weight: 40, quantity_min: 1, quantity_max: 2 },
+                LootEntry { item_id: "ancient_coin".to_string(), weight: 55, quantity_min: 2, quantity_max: 5 },
+                LootEntry { item_id: "health_potion".to_string(), weight: 45, quantity_min: 1, quantity_max: 2 },
+            ],
+            gold_min: 15, gold_max: 45,
+            roll_count: 3,
+        },
+        LootTable {
+            id: "ironmere_dungeon".to_string(),
+            flavor_text: "The dungeon cells held more than prisoners — the goblins stored their \
+                          most valuable plunder here, away from the eyes of their rivals. Rusted \
+                          manacles hang from the walls beside caches of stolen goods.".to_string(),
+            guaranteed_items: vec![
+                ("iron_ingot".to_string(), 2),
+                ("tattered_cloth".to_string(), 2),
+            ],
+            random_entries: vec![
+                LootEntry { item_id: "dungeon_warden_helm".to_string(), weight: 35, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "iron_short_sword".to_string(), weight: 25, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "health_potion".to_string(), weight: 50, quantity_min: 1, quantity_max: 2 },
+                LootEntry { item_id: "leather".to_string(), weight: 45, quantity_min: 1, quantity_max: 3 },
+                LootEntry { item_id: "ancient_coin".to_string(), weight: 40, quantity_min: 1, quantity_max: 4 },
+                LootEntry { item_id: "ghost_essence".to_string(), weight: 25, quantity_min: 1, quantity_max: 1 },
+            ],
+            gold_min: 12, gold_max: 35,
+            roll_count: 3,
+        },
+        LootTable {
+            id: "shadow_cave_hidden_chamber".to_string(),
+            flavor_text: "The hidden chamber was sealed behind a false wall of loose rubble — \
+                          the goblins' private vault, known only to the shaman. Stolen goods \
+                          and ritual items are piled alongside something darker: the shadow \
+                          stalker's own hoard of trophies.".to_string(),
+            guaranteed_items: vec![
+                ("shadow_stone".to_string(), 2),
+                ("iron_ingot".to_string(), 2),
+            ],
+            random_entries: vec![
+                LootEntry { item_id: "shaman_staff".to_string(), weight: 30, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "iron_short_sword".to_string(), weight: 25, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "health_potion".to_string(), weight: 55, quantity_min: 1, quantity_max: 2 },
+                LootEntry { item_id: "ancient_coin".to_string(), weight: 45, quantity_min: 2, quantity_max: 6 },
+                LootEntry { item_id: "carved_bone".to_string(), weight: 35, quantity_min: 1, quantity_max: 3 },
+                LootEntry { item_id: "clarity_potion".to_string(), weight: 20, quantity_min: 1, quantity_max: 1 },
+            ],
+            gold_min: 20, gold_max: 50,
+            roll_count: 3,
+        },
+        LootTable {
+            id: "crystal_cave_hidden_seam".to_string(),
+            flavor_text: "The hidden seam glows with an unearthly light — the purest crystal \
+                          formations in all of Embervale, untouched since the cave was first \
+                          carved by ancient water. The crystal elemental guarded this trove well. \
+                          Cracking open the largest formations reveals prizes of immense power.".to_string(),
+            guaranteed_items: vec![
+                ("void_crystal".to_string(), 1),
+                ("crystal_shard".to_string(), 4),
+                ("crystalline_dust".to_string(), 3),
+            ],
+            random_entries: vec![
+                LootEntry { item_id: "void_crystal_ring".to_string(), weight: 50, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "crystal_ring".to_string(), weight: 40, quantity_min: 1, quantity_max: 1 },
+                LootEntry { item_id: "health_potion".to_string(), weight: 60, quantity_min: 2, quantity_max: 3 },
+                LootEntry { item_id: "clarity_potion".to_string(), weight: 45, quantity_min: 1, quantity_max: 2 },
+                LootEntry { item_id: "crystal_shard".to_string(), weight: 70, quantity_min: 3, quantity_max: 6 },
+            ],
+            gold_min: 20, gold_max: 55,
+            roll_count: 4,
         },
     ]
 }

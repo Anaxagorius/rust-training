@@ -304,7 +304,8 @@ pub fn build_starting_world() -> WorldMap {
         .with_exit(Exit::new("east", "ashwood_edge", "A narrow trail breaks into the forest edge."))
         .with_exit(Exit::new("west", "valley_west", "The valley floor opens west into open grassland."))
         .with_enemy_spawn("goblin_scout")
-        .with_enemy_spawn("valley_wolf"),
+        .with_enemy_spawn("valley_wolf")
+        .with_enemy_spawn("scarred_outlaw"),
     );
 
     map.add_location(
@@ -368,9 +369,12 @@ pub fn build_starting_world() -> WorldMap {
         )
         .with_exit(Exit::new("south", "ashwood_clearing", "Back south to the clearing."))
         .with_exit(Exit::new("north", "wolf_den_entrance", "The wolf den cave entrance."))
+        .with_exit(Exit::new("east", "ashwood_ancient_grove", "A barely visible path leads east into a darker, older part of the forest."))
         .with_enemy_spawn("wolf")
         .with_enemy_spawn("dire_wolf")
-        .with_enemy_spawn("forest_spider"),
+        .with_enemy_spawn("forest_spider")
+        .with_enemy_spawn("ashwood_treant")
+        .with_enemy_spawn("fell_druid_spirit"),
     );
 
     // --- Wolf Den ---
@@ -417,7 +421,8 @@ pub fn build_starting_world() -> WorldMap {
         .with_exit(Exit::new("west", "ashwood_clearing", "Back toward the forest clearing."))
         .with_exit(Exit::new("east", "bog_heart", "Deeper into the bog."))
         .with_enemy_spawn("bog_crawler")
-        .with_enemy_spawn("swamp_witch"),
+        .with_enemy_spawn("swamp_witch")
+        .with_enemy_spawn("bog_lurker"),
     );
 
     map.add_location(
@@ -430,9 +435,12 @@ pub fn build_starting_world() -> WorldMap {
             RegionType::Swamp,
         )
         .with_exit(Exit::new("west", "bog_trail", "Back along the bog trail."))
+        .with_exit(Exit::new("north", "bog_witchhut", "A narrow, rotten causeway leads north into the darkest part of the bog."))
         .with_npc("hermit_bogdan")
         .with_enemy_spawn("bog_crawler")
         .with_enemy_spawn("swamp_witch")
+        .with_enemy_spawn("bog_lurker")
+        .with_enemy_spawn("marsh_troll")
         .with_crafting_station("AlchemyStone"),
     );
 
@@ -466,6 +474,7 @@ pub fn build_starting_world() -> WorldMap {
         )
         .with_exit(Exit::new("south", "ironmere_approach", "Back to the approach road."))
         .with_exit(Exit::new("north", "ironmere_tower", "To the iron-banded tower door.").locked("iron_key"))
+        .with_exit(Exit::new("down", "ironmere_dungeon", "Stairs descend into the keep's dungeon below."))
         .with_enemy_spawn("goblin_warrior")
         .with_enemy_spawn("goblin_shaman")
         .with_loot_table("ironmere_courtyard"),
@@ -631,7 +640,8 @@ pub fn build_starting_world() -> WorldMap {
         .with_exit(Exit::new("north", "frostpeak_approach", "North into the ice-scoured heights where the mountains pierce the clouds."))
         .with_npc("ranger_vex")
         .with_enemy_spawn("stone_troll")
-        .with_enemy_spawn("mountain_goat"),
+        .with_enemy_spawn("mountain_goat")
+        .with_enemy_spawn("vale_revenant"),
     );
 
     map.add_location(
@@ -700,6 +710,7 @@ pub fn build_starting_world() -> WorldMap {
             RegionType::Cave,
         )
         .with_exit(Exit::new("south", "crystal_cave_entrance", "South back to the cave entrance."))
+        .with_exit(Exit::new("west", "crystal_cave_hidden_seam", "A narrow gap between crystal formations opens westward into a deeper chamber."))
         .with_enemy_spawn("cave_bear")
         .with_enemy_spawn("crystal_golem")
         .with_enemy_spawn("giant_bat")
@@ -760,10 +771,12 @@ pub fn build_starting_world() -> WorldMap {
             RegionType::Cave,
         )
         .with_exit(Exit::new("south", "shadow_cave_entrance", "South back toward the cave entrance."))
+        .with_exit(Exit::new("west", "shadow_cave_hidden_chamber", "A crack in the western wall reveals a concealed passage."))
         .with_enemy_spawn("goblin_warrior")
         .with_enemy_spawn("goblin_archer")
         .with_enemy_spawn("goblin_shaman")
         .with_enemy_spawn("cave_troll")
+        .with_enemy_spawn("shadow_stalker")
         .with_loot_table("shadow_cave_depths"),
     );
 
@@ -931,6 +944,7 @@ pub fn build_starting_world() -> WorldMap {
         .with_enemy_spawn("skeleton_archer")
         .with_enemy_spawn("barrow_knight")
         .with_enemy_spawn("wraith")
+        .with_enemy_spawn("vale_revenant")
         .with_loot_table("barrow_interior"),
     );
 
@@ -1233,6 +1247,120 @@ pub fn build_starting_world() -> WorldMap {
         .with_enemy_spawn("harpy"),
     );
 
+    // =========================================================
+    // --- New Unique Sub-Area Instances ---
+    // Five explorable instances, each connected to an existing
+    // area and containing unique encounters and treasures.
+    // =========================================================
+
+    // --- Ashwood Ancient Grove ---
+    map.add_location(
+        Location::new(
+            "ashwood_ancient_grove",
+            "Ashwood Ancient Grove",
+            "An ancient glade deep in the Ashwood Forest where time seems to have stopped. \
+             Enormous ash trees, their trunks as wide as houses, form a natural cathedral \
+             overhead. Standing stones carved with druidic symbols mark the cardinal points. \
+             The air hums with corrupted nature magic — the grove was sacred once, but \
+             something twisted it long ago. Ancient treants pace the glade like wardens, and \
+             the fell spirit of the last druid-guardian drifts between the standing stones. \
+             At the centre, the Treant Lord himself — oldest of the old-growth — holds court \
+             over his blighted domain.",
+            RegionType::Forest,
+        )
+        .with_exit(Exit::new("west", "ashwood_depths", "Back west through the dark forest."))
+        .with_enemy_spawn("ashwood_treant")
+        .with_enemy_spawn("treant_lord")
+        .with_enemy_spawn("fell_druid_spirit")
+        .with_enemy_spawn("wolf")
+        .with_loot_table("ashwood_ancient_grove"),
+    );
+
+    // --- Bog Witch's Hut ---
+    map.add_location(
+        Location::new(
+            "bog_witchhut",
+            "Bog Witch's Hut",
+            "At the end of a rotten causeway, half-sunken into black water, squats the hut \
+             of the Swamp Witch Queen. It is a repulsive structure of lashed driftwood, \
+             stretched hides, and hanging bones that rattle in the fetid breeze. The door \
+             stands open — an invitation and a challenge. Inside, the shelves are crowded \
+             with bottled things, dried herbs, skulls, and stolen jewellery. Marsh trolls \
+             guard the approach. The Queen herself waits within, ancient and amused that \
+             anyone dared to come this far.",
+            RegionType::Swamp,
+        )
+        .with_exit(Exit::new("south", "bog_heart", "Back south along the causeway."))
+        .with_enemy_spawn("swamp_witch_queen")
+        .with_enemy_spawn("marsh_troll")
+        .with_enemy_spawn("bog_crawler")
+        .with_enemy_spawn("swamp_witch")
+        .with_loot_table("bog_witchhut"),
+    );
+
+    // --- Ironmere Dungeon ---
+    map.add_location(
+        Location::new(
+            "ironmere_dungeon",
+            "Ironmere Keep Dungeon",
+            "The dungeon beneath Ironmere Keep is everything the keep above is not: tightly \
+             built, cold, and permanent. The goblins use it as a prison and private vault — \
+             iron cages line the walls, many still occupied by skeletal remains of past \
+             captives. The Ironmere Jailer stalks the corridors with a spiked club and \
+             a ring of keys. Dungeon shades — spirits of those who perished here — drift \
+             through the locked cells, attacking anything living that disturbs their torment. \
+             Crates of plundered goods are stacked in a side chamber: the goblin warlord's \
+             private reserve.",
+            RegionType::Dungeon,
+        )
+        .with_exit(Exit::new("up", "ironmere_courtyard", "Up the stairs back to the courtyard."))
+        .with_enemy_spawn("ironmere_jailer")
+        .with_enemy_spawn("dungeon_shade")
+        .with_enemy_spawn("goblin_warrior")
+        .with_loot_table("ironmere_dungeon"),
+    );
+
+    // --- Shadow Cave Hidden Chamber ---
+    map.add_location(
+        Location::new(
+            "shadow_cave_hidden_chamber",
+            "Shadow Cave — Hidden Chamber",
+            "Behind a false wall of loose rubble in the deepest part of the shadow cave \
+             lies a concealed chamber. The goblin shaman used this space for private ritual \
+             and to hide his most valued possessions from rival goblins. Crude runes are \
+             daubed on the walls in something darker than paint. The shadow stalker has \
+             claimed one corner as its nest — its kill trophies surround it. A locked iron \
+             chest holds the shaman's personal hoard, alongside ritual implements of \
+             disturbing purpose.",
+            RegionType::Cave,
+        )
+        .with_exit(Exit::new("east", "shadow_cave_depths", "Back east to the shadow cave main chamber."))
+        .with_enemy_spawn("shadow_stalker")
+        .with_enemy_spawn("cave_troll")
+        .with_enemy_spawn("goblin_shaman")
+        .with_loot_table("shadow_cave_hidden_chamber"),
+    );
+
+    // --- Crystal Cave Hidden Seam ---
+    map.add_location(
+        Location::new(
+            "crystal_cave_hidden_seam",
+            "Crystal Cave — Hidden Seam",
+            "A narrow gap between two enormous crystal formations opens into a chamber of \
+             breathtaking beauty and immense danger. The walls are lined with void crystals — \
+             a black variant of the cave's usual formations, pulsing with cold inner light. \
+             A crystal elemental of unprecedented size has claimed this deepest seam, feeding \
+             on the void crystals' energy until it grew to terrible power. The formations \
+             here are the oldest and most potent in all of Embervale — and the elemental \
+             guards them with absolute fury.",
+            RegionType::Cave,
+        )
+        .with_exit(Exit::new("east", "crystal_cave_depths", "Back east to the crystal cave inner chamber."))
+        .with_enemy_spawn("crystal_elemental")
+        .with_enemy_spawn("crystal_golem")
+        .with_loot_table("crystal_cave_hidden_seam"),
+    );
+
     // Mark the starting location as visited
     if let Some(start) = map.locations.get_mut("thornvale_square") {
         start.is_visited = true;
@@ -1390,5 +1518,56 @@ mod tests {
         assert!(pass.npc_ids.contains(&"ranger_vex".to_string()), "ranger_vex should be in north_mountain_pass");
         let millford = world.locations.get("millford_ruins").unwrap();
         assert!(millford.npc_ids.contains(&"scholar_lyria".to_string()), "scholar_lyria should be in millford_ruins");
+    }
+
+    #[test]
+    fn test_new_sub_area_instances_exist() {
+        let world = build_starting_world();
+        let instance_ids = [
+            "ashwood_ancient_grove",
+            "bog_witchhut",
+            "ironmere_dungeon",
+            "shadow_cave_hidden_chamber",
+            "crystal_cave_hidden_seam",
+        ];
+        for id in &instance_ids {
+            assert!(world.locations.contains_key(*id), "Missing sub-area instance: {}", id);
+        }
+    }
+
+    #[test]
+    fn test_new_sub_areas_connected_to_existing() {
+        let world = build_starting_world();
+        // Each new instance should be reachable via an exit from an existing location
+        let ashwood_depths = world.locations.get("ashwood_depths").unwrap();
+        assert!(ashwood_depths.exits.iter().any(|e| e.destination_id == "ashwood_ancient_grove"),
+            "ashwood_depths should connect to ashwood_ancient_grove");
+        let bog_heart = world.locations.get("bog_heart").unwrap();
+        assert!(bog_heart.exits.iter().any(|e| e.destination_id == "bog_witchhut"),
+            "bog_heart should connect to bog_witchhut");
+        let courtyard = world.locations.get("ironmere_courtyard").unwrap();
+        assert!(courtyard.exits.iter().any(|e| e.destination_id == "ironmere_dungeon"),
+            "ironmere_courtyard should connect to ironmere_dungeon");
+        let shadow_depths = world.locations.get("shadow_cave_depths").unwrap();
+        assert!(shadow_depths.exits.iter().any(|e| e.destination_id == "shadow_cave_hidden_chamber"),
+            "shadow_cave_depths should connect to shadow_cave_hidden_chamber");
+        let crystal_depths = world.locations.get("crystal_cave_depths").unwrap();
+        assert!(crystal_depths.exits.iter().any(|e| e.destination_id == "crystal_cave_hidden_seam"),
+            "crystal_cave_depths should connect to crystal_cave_hidden_seam");
+    }
+
+    #[test]
+    fn test_boss_encounters_in_new_instances() {
+        let world = build_starting_world();
+        let grove = world.locations.get("ashwood_ancient_grove").unwrap();
+        assert!(grove.enemy_spawn_ids.contains(&"treant_lord".to_string()));
+        let witchhut = world.locations.get("bog_witchhut").unwrap();
+        assert!(witchhut.enemy_spawn_ids.contains(&"swamp_witch_queen".to_string()));
+        let seam = world.locations.get("crystal_cave_hidden_seam").unwrap();
+        assert!(seam.enemy_spawn_ids.contains(&"crystal_elemental".to_string()));
+        let dungeon = world.locations.get("ironmere_dungeon").unwrap();
+        assert!(dungeon.enemy_spawn_ids.contains(&"ironmere_jailer".to_string()));
+        let hidden = world.locations.get("shadow_cave_hidden_chamber").unwrap();
+        assert!(hidden.enemy_spawn_ids.contains(&"shadow_stalker".to_string()));
     }
 }
