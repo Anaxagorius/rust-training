@@ -150,12 +150,12 @@ impl Character {
             return Err(GameError::InvalidOperation("Not enough stat points".to_string()));
         }
         match stat {
-            "STR" | "strength" => self.stats.strength += points as i32,
-            "INT" | "intelligence" => self.stats.intelligence += points as i32,
-            "WIS" | "wisdom" => self.stats.wisdom += points as i32,
-            "CON" | "constitution" => self.stats.constitution += points as i32,
-            "DEX" | "dexterity" => self.stats.dexterity += points as i32,
-            "CHA" | "charisma" => self.stats.charisma += points as i32,
+            "STR" | "str" | "strength" => self.stats.strength += points as i32,
+            "INT" | "int" | "intelligence" => self.stats.intelligence += points as i32,
+            "WIS" | "wis" | "wisdom" => self.stats.wisdom += points as i32,
+            "CON" | "con" | "constitution" => self.stats.constitution += points as i32,
+            "DEX" | "dex" | "dexterity" => self.stats.dexterity += points as i32,
+            "CHA" | "cha" | "charisma" => self.stats.charisma += points as i32,
             _ => return Err(GameError::NotFound(format!("Stat '{}' not found", stat))),
         }
         self.stat_points -= points;
@@ -322,5 +322,30 @@ mod tests {
     fn test_gain_craft_xp_unknown_skill_returns_false() {
         let mut c = Character::new("Test".to_string());
         assert!(!c.gain_craft_xp("Teleportation", 9999));
+    }
+
+    #[test]
+    fn test_allocate_stat_lowercase_abbreviations() {
+        let mut c = Character::new("Test".to_string());
+        c.stat_points = 6;
+        let base_str = c.stats.strength;
+        let base_int = c.stats.intelligence;
+        let base_wis = c.stats.wisdom;
+        let base_con = c.stats.constitution;
+        let base_dex = c.stats.dexterity;
+        let base_cha = c.stats.charisma;
+        assert!(c.allocate_stat("str", 1).is_ok());
+        assert!(c.allocate_stat("int", 1).is_ok());
+        assert!(c.allocate_stat("wis", 1).is_ok());
+        assert!(c.allocate_stat("con", 1).is_ok());
+        assert!(c.allocate_stat("dex", 1).is_ok());
+        assert!(c.allocate_stat("cha", 1).is_ok());
+        assert_eq!(c.stats.strength, base_str + 1);
+        assert_eq!(c.stats.intelligence, base_int + 1);
+        assert_eq!(c.stats.wisdom, base_wis + 1);
+        assert_eq!(c.stats.constitution, base_con + 1);
+        assert_eq!(c.stats.dexterity, base_dex + 1);
+        assert_eq!(c.stats.charisma, base_cha + 1);
+        assert_eq!(c.stat_points, 0);
     }
 }
