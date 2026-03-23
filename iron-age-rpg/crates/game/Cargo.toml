@@ -7,6 +7,10 @@ edition = "2021"
 name = "iron-age-rpg"
 path = "src/main.rs"
 
+[[bin]]
+name = "iron-age-rpg-gui"
+path = "src/gui_main.rs"
+
 [dependencies]
 iron-age-core = { path = "../core" }
 iron-age-character = { path = "../character" }
@@ -19,3 +23,4 @@ iron-age-data = { path = "../data" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 rand = { workspace = true }
+eframe = { version = "0.27", default-features = false, features = ["default_fonts", "glow"] }
